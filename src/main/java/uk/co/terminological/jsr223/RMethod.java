@@ -16,12 +16,6 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 public @interface RMethod {
 
-	String title();
-	String description() default "";
-	String[] details() default {};
-	String[] aliases() default {};
-	String[] imports() default {};
 	String[] examples() default {};
-	String returns() default "";
 	
 }

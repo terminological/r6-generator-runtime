@@ -16,12 +16,6 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 public @interface RClass {
 	
-	String packageName();
-	String title();
-	String licence();
-	String version();
-	String description() default "";
-	String[] authors() default {};
 	String[] imports() default {};
 	String[] suggests() default {};
 	
