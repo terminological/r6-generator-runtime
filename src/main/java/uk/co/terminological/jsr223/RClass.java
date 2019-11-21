@@ -7,7 +7,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Will populate data in DESCRIPTION file 
+ * This annotation identifies a class as part of an R library api
+ * Fields here will populate data in DESCRIPTION file and allow
+ * R to load dependencies when it loads the R library api 
  * @author terminological
  *
  */
@@ -16,7 +18,16 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 public @interface RClass {
 	
+	/**
+	 * A set of R library dependencies specified as the CRAN library name
+	 * @return
+	 */
 	String[] imports() default {};
+	
+	/**
+	 * A set of R library suggestions specified as the CRAN library name
+	 * @return
+	 */
 	String[] suggests() default {};
 	
 }

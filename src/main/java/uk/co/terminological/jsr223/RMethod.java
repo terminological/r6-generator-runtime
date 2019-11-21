@@ -7,7 +7,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Will populate data in NAMESPACE and .Rd files
+ * Methods marekd by this annotation will be included in the R library api.
+ * In the R API methods must all have different names so method or constructor overloading is not 
+ * supported. Both static and non-static methods are supported allowing for factory style constructors.
+ *  
+ * examples field is used to populate .Rd files
  * @author terminological
  *
  */
