@@ -29,7 +29,24 @@ import java.util.stream.StreamSupport;
  */
 public class ROutput {
 
-	private static List<Class<?>> supportedLengthOneOutputs = Arrays.asList(
+	public static class Dataframe extends LinkedHashMap<String, Object[]> {
+//		public Dataframe addRow(Map<String,Object> row) {
+//			for (Entry<String,Object> ent: row.entrySet()) {
+//				if (!this.containsKey(ent.getKey())) this.put(ent.getKey(), new ArrayList<Object>());
+//				Object tmp = ent.getValue();
+//				if (tmp == null || ROutput.supportedLengthOneOutputs.contains(tmp.getClass())) {
+//					lhm.get(ent.getKey()).add(tmp);
+//				} else {
+//					//TODO: could do datatype conversion here
+//					lhm.get(ent.getKey()).add(tmp.toString());
+//				}
+//				
+//			}
+//		}
+	}
+	public static class RowMajorDataframe extends ArrayList<LinkedHashMap<String, Object>> {}
+	
+	public static List<Class<?>> supportedLengthOneOutputs = Arrays.asList(
 			Integer.class, int.class,
 			String.class,
 			Byte.class, byte.class,
@@ -42,7 +59,7 @@ public class ROutput {
 			Long.class, long.class
 	);
 	
-	/*private static List<Class<?>> supportedArrayOutputs = Arrays.asList(
+	public static List<Class<?>> supportedArrayOutputs = Arrays.asList(
 			Integer[].class, int[].class,
 			String[].class,
 			Byte[].class, byte[].class,
@@ -53,13 +70,39 @@ public class ROutput {
 			BigInteger[].class,
 			Short[].class, short[].class,
 			Long[].class, long[].class
-	);*/
+	);
 	
 	/*private static Class<?>[] supportedInputs = {
 			Double.class, Integer.class, String.class,
 			Boolean.class, Byte.class, 
 			double[].class, int[].class, String[].class, boolean[].class, byte[].class
 	};*/
+	
+	public static <K> LinkedHashMap<K,Object> ensureSafe(Map<K,Object> input) {
+		if (input == null) return null;
+		LinkedHashMap<K,Object> out = new LinkedHashMap<K,Object>();
+		boolean colMajor = input.values().stream().filter(o -> o != null).anyMatch(o -> o.getClass().isArray());
+		if (colMajor) {
+			for(Entry<K,Object> entry: input.entrySet()) {
+				if (entry.getValue() == null || ROutput.supportedArrayOutputs.contains(entry.getValue().getClass())) {
+					out.put(entry.getKey(), entry.getValue());
+				} else {
+					String[] tmp = Arrays.stream((Object[]) entry.getValue()).map(Object::toString).toArray(String[]::new);
+					out.put(entry.getKey(), tmp);
+					
+				}
+			}
+		} else {
+			for(Entry<K,Object> entry: input.entrySet()) {
+				if (entry.getValue() == null || ROutput.supportedLengthOneOutputs.contains(entry.getValue().getClass())) {
+					out.put(entry.getKey(), entry.getValue());
+				} else {
+					out.put(entry.getKey(), entry.getValue().toString());
+				}
+			}
+		}
+		return(out);
+	}
 	
 	@SuppressWarnings("unchecked")
 	private static <X> MapRule<X>[] reflectionRules(Class<X> clazz) {
@@ -135,15 +178,15 @@ public class ROutput {
 	 * @return
 	 */
 	@SafeVarargs
-	public static <K,V> Map<K,LinkedHashMap<String,Object>> convertMapValues(Map<K,V> input, String keyColName, MapRule<V>... rules) {
-		Map<K,LinkedHashMap<String,Object>> out = new LinkedHashMap<K,LinkedHashMap<String,Object>>();
+	public static <K,V> RowMajorDataframe convertMapValues(Map<K,V> input, String keyColName, MapRule<V>... rules) {
+		RowMajorDataframe out = new RowMajorDataframe();
 		for (Entry<K,V> entry: input.entrySet()) {
 			LinkedHashMap<String,Object> tmp = new LinkedHashMap<String,Object>();
 			tmp.put(keyColName, entry.getKey());
 			for(MapRule<V> rule: rules) {
 				tmp.put(rule.label(), rule.rule().apply(entry.getValue()));
 			}
-			out.put(entry.getKey(), tmp);
+			out.add(tmp);
 		}
 		return out;
 	}
@@ -155,7 +198,7 @@ public class ROutput {
 	 * @param clazz - the class that the converter will deal with 
 	 * @return - a collectingConverter capable of dealing with inputs of type X 
 	 */
-	public static <X> ConvertingCollector<X,ArrayList<LinkedHashMap<String, Object>>> convertToRowMajor(Class<X> clazz) {
+	public static <X> ConvertingCollector<X,RowMajorDataframe> convertToRowMajor(Class<X> clazz) {
 		return convertToRowMajor(reflectionRules(clazz));
 	}
 	
@@ -167,10 +210,10 @@ public class ROutput {
 	 * @return - a collectingConverter capable of dealing with inputs of type X 
 	 */
 	@SafeVarargs
-	public static <X> ConvertingCollector<X,ArrayList<LinkedHashMap<String, Object>>> convertToRowMajor(MapRule<X>... rules) {
-		return new ConvertingCollector<X,ArrayList<LinkedHashMap<String, Object>>>() {
+	public static <X> ConvertingCollector<X,RowMajorDataframe> convertToRowMajor(MapRule<X>... rules) {
+		return new ConvertingCollector<X,RowMajorDataframe>() {
 			@Override
-			public ArrayList<LinkedHashMap<String, Object>> stream(Stream<X> stream) {
+			public RowMajorDataframe stream(Stream<X> stream) {
 				return stream.collect(toRowMajorDataframe(rules));
 			}
 		};
@@ -183,7 +226,7 @@ public class ROutput {
 	 * @param clazz - the class that the converter will deal with 
 	 * @return - a collectingConverter capable of dealing with inputs of type X 
 	 */
-	public static <X> ConvertingCollector<X,LinkedHashMap<String, Object[]>> convertToDataframe(Class<X> clazz) {
+	public static <X> ConvertingCollector<X,Dataframe> convertToDataframe(Class<X> clazz) {
 		return convertToColMajor(clazz);
 	}
 	
@@ -195,7 +238,7 @@ public class ROutput {
 	 * @return - a collectingConverter capable of dealing with inputs of type X 
 	 */
 	@SafeVarargs
-	public static <X> ConvertingCollector<X,LinkedHashMap<String, Object[]>> convertToDataframe(MapRule<X>... rules) {
+	public static <X> ConvertingCollector<X,Dataframe> convertToDataframe(MapRule<X>... rules) {
 		return convertToColMajor(rules);
 	}
 	
@@ -206,7 +249,7 @@ public class ROutput {
 	 * @param clazz - the class that the converter will deal with 
 	 * @return - a collectingConverter capable of dealing with inputs of type X 
 	 */
-	private static <X> ConvertingCollector<X,LinkedHashMap<String, Object[]>> convertToColMajor(Class<X> clazz) {
+	private static <X> ConvertingCollector<X,Dataframe> convertToColMajor(Class<X> clazz) {
 		return convertToColMajor(reflectionRules(clazz));
 	}
 	
@@ -218,10 +261,10 @@ public class ROutput {
 	 * @return - a collectingConverter capable of dealing with inputs of type X 
 	 */
 	@SafeVarargs
-	private static <X> ConvertingCollector<X,LinkedHashMap<String, Object[]>> convertToColMajor(MapRule<X>... rules) {
-		return new ConvertingCollector<X,LinkedHashMap<String, Object[]>>() {
+	private static <X> ConvertingCollector<X,Dataframe> convertToColMajor(MapRule<X>... rules) {
+		return new ConvertingCollector<X,Dataframe>() {
 			@Override
-			public LinkedHashMap<String, Object[]> stream(Stream<X> stream) {
+			public Dataframe stream(Stream<X> stream) {
 				return stream.collect(toDataframe(rules));
 			}
 		};
@@ -308,8 +351,8 @@ public class ROutput {
 	 * @return A collector that works in a stream.collect(RConvert.toDataFrame(mapping1, mapping2, ...))
 	 */
 	@SafeVarargs
-	public static <X> Collector<X,?,LinkedHashMap<String, Object[]>> toDataframe(final MapRule<X>... rules) {
-		return new Collector<X,LinkedHashMap<String, List<Object>>,LinkedHashMap<String, Object[]>>() {
+	public static <X> Collector<X,?,Dataframe> toDataframe(final MapRule<X>... rules) {
+		return new Collector<X,LinkedHashMap<String, List<Object>>,Dataframe>() {
 
 			@Override
 			public Supplier<LinkedHashMap<String, List<Object>>> supplier() {
@@ -346,9 +389,9 @@ public class ROutput {
 			}
 
 			@Override
-			public Function<LinkedHashMap<String, List<Object>>, LinkedHashMap<String, Object[]>> finisher() {
+			public Function<LinkedHashMap<String, List<Object>>, Dataframe> finisher() {
 				return a -> {
-					LinkedHashMap<String, Object[]> out = new LinkedHashMap<String, Object[]>();
+					Dataframe out = new Dataframe();
 					for (String key: a.keySet()) {
 						out.put(key, a.get(key).toArray());
 					}
@@ -378,16 +421,16 @@ public class ROutput {
 	 * @return A collector that works in a stream.collect(RConvert.toRowMajorDataFrame(mapping1, mapping2, ...))
 	 */
 	@SafeVarargs
-	public static <X> Collector<X,?,ArrayList<LinkedHashMap<String, Object>>> toRowMajorDataframe(final MapRule<X>... rules) {
-		return new Collector<X,ArrayList<LinkedHashMap<String, Object>>,ArrayList<LinkedHashMap<String, Object>>>() {
+	public static <X> Collector<X,?,RowMajorDataframe> toRowMajorDataframe(final MapRule<X>... rules) {
+		return new Collector<X,RowMajorDataframe,RowMajorDataframe>() {
 
 			@Override
-			public Supplier<ArrayList<LinkedHashMap<String, Object>>> supplier() {
-				return () -> new ArrayList<LinkedHashMap<String, Object>>();
+			public Supplier<RowMajorDataframe> supplier() {
+				return () -> new RowMajorDataframe();
 			}
 
 			@Override
-			public BiConsumer<ArrayList<LinkedHashMap<String, Object>>, X> accumulator() {
+			public BiConsumer<RowMajorDataframe, X> accumulator() {
 				return (lhm, o) -> {
 					LinkedHashMap<String, Object> tmp = new LinkedHashMap<String, Object>(); 
 					for (MapRule<X> rule: rules) {
@@ -399,7 +442,7 @@ public class ROutput {
 			}
 
 			@Override
-			public BinaryOperator<ArrayList<LinkedHashMap<String, Object>>> combiner() {
+			public BinaryOperator<RowMajorDataframe> combiner() {
 				return (lhm,rhm) -> {
 					lhm.addAll(rhm);
 					return lhm;
@@ -407,7 +450,7 @@ public class ROutput {
 			}
 
 			@Override
-			public Function<ArrayList<LinkedHashMap<String, Object>>, ArrayList<LinkedHashMap<String, Object>>> finisher() {
+			public Function<RowMajorDataframe, RowMajorDataframe> finisher() {
 				return a -> a;
 			}
 
@@ -423,5 +466,74 @@ public class ROutput {
 		};
 	}
 	
-	
+	/**
+	 * A stream collector that collects a stream of maps and assembles it into a col major dataframe
+	 * @return A collector that works in a streamOfMaps.collect(RConvert.mapsToDataFrame())
+	 */
+	public static Collector<Map<String,Object>,?,Dataframe> mapsToDataframe() {
+		return new Collector<Map<String,Object>,LinkedHashMap<String, List<Object>>,Dataframe>() {
+
+			@Override
+			public Supplier<LinkedHashMap<String, List<Object>>> supplier() {
+				return () -> new LinkedHashMap<String, List<Object>>();
+			}
+
+			@Override
+			public BiConsumer<LinkedHashMap<String, List<Object>>, Map<String,Object>> accumulator() {
+				return (lhm, o) -> {
+					synchronized(lhm) {
+						for (Entry<String,Object> ent: o.entrySet()) {
+							//TODO: this wont work if the map is not complete.
+							if (!lhm.containsKey(ent.getKey())) lhm.put(ent.getKey(), new ArrayList<Object>());
+							Object tmp = ent.getValue();
+							if (tmp == null || ROutput.supportedLengthOneOutputs.contains(tmp.getClass())) {
+								lhm.get(ent.getKey()).add(tmp);
+							} else {
+								//TODO: could do datatype conversion here
+								lhm.get(ent.getKey()).add(tmp.toString());
+							}
+							
+						}
+					}
+				};
+			}
+
+			@Override
+			public BinaryOperator<LinkedHashMap<String, List<Object>>> combiner() {
+				return (lhm,rhm) -> {
+					LinkedHashMap<String, List<Object>> out = new LinkedHashMap<String, List<Object>>();
+					for (String key: lhm.keySet()) {
+						List<Object> lhs = lhm.get(key);
+						List<Object> rhs = rhm.get(key);
+						lhs.addAll(rhs);
+						out.put(key, lhs);
+					}
+					return out;
+				};
+			}
+
+			@Override
+			public Function<LinkedHashMap<String, List<Object>>, Dataframe> finisher() {
+				return a -> {
+					Dataframe out = new Dataframe();
+					for (String key: a.keySet()) {
+						out.put(key, a.get(key).toArray());
+					}
+					return out;
+				};
+			}
+
+			@Override
+			public Set<Characteristics> characteristics() {
+				return new HashSet<>(
+						Arrays.asList(
+								Characteristics.UNORDERED,
+								Characteristics.CONCURRENT
+								));
+			}
+
+			
+			
+		};
+	}
 }
