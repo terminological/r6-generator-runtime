@@ -2,6 +2,7 @@ package uk.co.terminological.jsr223;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * A set of helper functions to handle data coming from R.
@@ -15,7 +16,7 @@ public class RInput {
 	 * @param colMajor
 	 * @return
 	 */
-	public static ArrayList<LinkedHashMap<String, Object>> colMajorToRowMajor(LinkedHashMap<String, Object[]> colMajor) {
+	public static ArrayList<LinkedHashMap<String, Object>> colMajorToRowMajor(Map<String, Object[]> colMajor) {
 		ArrayList<LinkedHashMap<String, Object>> out = new ArrayList<LinkedHashMap<String, Object>>();
 		String randomKey = colMajor.keySet().iterator().next();
 		for(int i=0; i < colMajor.get(randomKey).length; i++) {

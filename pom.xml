@@ -2,8 +2,8 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
-	<groupId>com.github.terminological</groupId>
+<groupId>uk.co.terminological</groupId>
+<!-- 	<groupId>com.github.terminological</groupId> -->
 	<artifactId>r-jsr223-runtime</artifactId>
 	<version>1.04</version>
 	<packaging>jar</packaging>
@@ -15,6 +15,14 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.22</version>
+		</dependency>
+	</dependencies>
 
 	<build>
 		<plugins>
@@ -32,11 +40,22 @@
 	<!-- 
 	This could work but is instead copied directly from a local copy held in the plugin
 	This prevents github having to load big unchanged blobs on every commit.
-	 <dependencies>
+	<dependencies>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.22</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.7.22</version>
+		</dependency>
 		<dependency>
 			<groupId>org.codehaus.groovy</groupId>
-			<artifactId>groovy-all</artifactId>
-			<version>2.4.17</version>
+			<artifactId>groovy</artifactId>
+			<version>3.0.0</version>
 		</dependency>
-	</dependencies>-->
+	</dependencies>
+	-->
 </project>
