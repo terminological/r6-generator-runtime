@@ -1,4 +1,4 @@
-package uk.co.terminological.jsr223;
+package uk.co.terminological.rjava;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;

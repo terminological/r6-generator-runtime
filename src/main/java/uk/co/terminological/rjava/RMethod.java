@@ -1,4 +1,4 @@
-package uk.co.terminological.jsr223;
+package uk.co.terminological.rjava;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Methods marekd by this annotation will be included in the R library api.
+ * Methods marked by this annotation will be included in the R library api.
  * In the R API methods must all have different names so method or constructor overloading is not 
  * supported. Both static and non-static methods are supported allowing for factory style constructors.
  *  
