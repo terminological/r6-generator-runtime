@@ -46,7 +46,7 @@ public class RNamed<X extends RObject> implements RObject, Map.Entry<String,X> {
 	}
 	
 	@Override
-	public <X> X accept(RObjectVisitor<X> visitor) {return visitor.visit(this);}
+	public <Y> Y accept(RObjectVisitor<Y> visitor) {return visitor.visit(this);}
 
 	public static <Y extends RObject> RNamed<Y> from(Entry<String, Y> entry) {
 		return new RNamed<Y>(entry.getKey(), entry.getValue());

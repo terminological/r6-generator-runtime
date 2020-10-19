@@ -42,6 +42,7 @@ public class RNumeric implements RPrimitive, JNIPrimitive  {
 	//-Infinity fff0000000000000
 	//private static final double NA_DOUBLE = Double.longBitsToDouble(9221120237041090560L);
 	
+	@SuppressWarnings("unchecked")
 	public Double get() {
 		return self;
 	}
