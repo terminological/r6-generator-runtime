@@ -1,7 +1,5 @@
 package uk.co.terminological.rjava.types;
 
-import java.util.Optional;
-
 import uk.co.terminological.rjava.RConverter;
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
@@ -30,20 +28,29 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RFactor implements RPrimitive {
 
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
+	
+	
 	Integer self;
 	String label;
 	
-	static final int NA_FACTOR = Integer.MIN_VALUE;
+	static final int NA_VALUE = Integer.MIN_VALUE;
+	static final String NA_LABEL = "NA";
+	public static final RFactor NA = new RFactor(NA_VALUE, NA_LABEL);
 	
 	public RFactor(Enum<?> e) {
 		// convert zero based to 1 based for conversion to R.
-		this(e==null ? NA_FACTOR : e.ordinal()+1, e==null ? "NA" : e.toString());
+		this(
+			e==null ? NA_VALUE : e.ordinal()+1, 
+			e==null ? NA_LABEL : e.toString()
+		);
 	}
 	
 	public RFactor(int value, String label) {
-		if ((int) value == NA_FACTOR) {
+		if ((int) value == NA_VALUE) {
 			this.self = null;
-			this.label = "NA";
+			this.label = NA_LABEL;
 		} else {
 			this.self = Integer.valueOf((int) value);
 			this.label = label;
@@ -51,7 +58,7 @@ public class RFactor implements RPrimitive {
 	}
 	
 	public RFactor() {
-		this(NA_FACTOR, "NA");
+		this(NA_VALUE, "NA");
 	}
 
 	@Override
@@ -88,22 +95,24 @@ public class RFactor implements RPrimitive {
 	public String rLabel() {return label;}
 
 	public int rValue() {
-		return self == null ? NA_FACTOR : self.intValue();
+		return self == null ? NA_VALUE : self.intValue();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <X> Optional<X> as(Class<X> type) {
-		if(type.isEnum()) return Optional.ofNullable(type.getEnumConstants()[this.self]);
-		if(type.isInstance(this)) return Optional.ofNullable((X) this);
-		if(type.equals(String.class)) return Optional.ofNullable((X) this.label);
-		if(type.equals(Integer.class)) return Optional.ofNullable((X) this.self);
-		return Optional.empty();
+	public <X> X get(Class<X> type) throws ClassCastException {
+		if(type.isEnum()) return type.getEnumConstants()[this.self];
+		if(type.isInstance(this)) return (X) this;
+		if(type.equals(String.class)) return (X) this.label;
+		if(type.equals(Integer.class)) return (X) this.self;
+		throw new ClassCastException("Can't convert to a "+type.getCanonicalName());
 	}
-
-	public String toString() {return self==null?"NA":label.toString();}
+	
+	
+	public String toString() {return self==null? NA_LABEL : label.toString();}
 	
 	public String rCode() {
+		if (this.isNa()) return "NA";
 		return RConverter.rQuote(this.toString(), "'");
 	}
 	
@@ -112,5 +121,14 @@ public class RFactor implements RPrimitive {
 	
 	@Override
 	public <X> X accept(RObjectVisitor<X> visitor) {return visitor.visit(this);}
+	public boolean isNa() {return self == null;}
+
+	public static RFactor from(int value, String label) {
+		return new RFactor(value,label);
+	}
+
+	public static RFactor from(Enum<?> e) {
+		return new RFactor(e);
+	}
 	
 }

@@ -33,6 +33,9 @@ import uk.co.terminological.rjava.RObjectVisitor;
 		//JNIType = "[I"
 	)
 public class RFactorVector extends RVector<RFactor> {
+	
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	private String[] levels;
 	public RFactorVector(int[] values, String[] levels) {
 		for (int i=0; i<values.length; i++) this.add(new RFactor(values[i], levels[values[i]-1]));

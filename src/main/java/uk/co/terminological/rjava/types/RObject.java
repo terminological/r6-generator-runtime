@@ -3,6 +3,7 @@ package uk.co.terminological.rjava.types;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -11,6 +12,7 @@ import uk.co.terminological.rjava.RObjectVisitor;
 
 public interface RObject extends Serializable {
 
+	public static final long datatypeVersion = 1L;
 	
 	/** Derives the R code representation of this object. This is used for some objects
 	 * as a wire serialisation ({@link RList} and {@link RNamedList}) to copy them accross to R.
@@ -38,6 +40,8 @@ public interface RObject extends Serializable {
 			return out;
 		} catch (ClassNotFoundException | ClassCastException e) {
 			throw new IOException("Could not read class: "+clazz.getCanonicalName(),e);
+		} catch (InvalidClassException e) {
+			throw new IOException("An incompatible serialisation format is being used: "+clazz.getCanonicalName(),e);
 		}
 	}
 		

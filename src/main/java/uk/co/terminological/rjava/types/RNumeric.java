@@ -1,7 +1,6 @@
 package uk.co.terminological.rjava.types;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
@@ -34,9 +33,14 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RNumeric implements RPrimitive, JNIPrimitive  {
 
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	Double self;
-	private static final long NA_DOUBLE_LONG = 0x7ff00000000007a2L;
-	private static final double NA_DOUBLE = Double.longBitsToDouble(NA_DOUBLE_LONG);
+	
+	private static final long NA_VALUE_LONG = 0x7ff00000000007a2L;
+	static final double NA_VALUE = Double.longBitsToDouble(NA_VALUE_LONG);
+	public static final RNumeric NA = new RNumeric(NA_VALUE);
+	
 	//NaN 7ff8000000000000
 	//Infinity 7ff0000000000000
 	//-Infinity fff0000000000000
@@ -48,7 +52,8 @@ public class RNumeric implements RPrimitive, JNIPrimitive  {
 	}
 	
 	public RNumeric(Double value) {
-		self = value;
+		if (Double.doubleToRawLongBits(value.doubleValue()) == NA_VALUE_LONG) self = null;
+		else self = (Double) value;
 	}
 	
 	public RNumeric(Long value) {
@@ -68,12 +73,12 @@ public class RNumeric implements RPrimitive, JNIPrimitive  {
 	}
 	
 	public RNumeric(double value) {
-		if (Double.doubleToLongBits(value) == NA_DOUBLE_LONG) self = null;
+		if (Double.doubleToRawLongBits(value) == NA_VALUE_LONG) self = null;
 		else self = (Double) value;
 	}
 	
 	public RNumeric() {
-		this(NA_DOUBLE);
+		self = null;
 	}
 	
 	@Override
@@ -101,23 +106,26 @@ public class RNumeric implements RPrimitive, JNIPrimitive  {
 		return true;
 	}
 	
-	public double rPrimitive() {return self == null ? NA_DOUBLE : self.doubleValue();} 
+	public double rPrimitive() {return self == null ? NA_VALUE : self.doubleValue();} 
+	
+	
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public <X> Optional<X> as(Class<X> type) {
-		if (type.isInstance(this)) return Optional.ofNullable((X) this);
-		if (type.isInstance(self)) return Optional.ofNullable((X) self);
-		if (type.equals(Long.class)) return Optional.ofNullable((X) (Long) self.longValue());
-		if (type.equals(Double.class)) return Optional.ofNullable((X) (Double) self.doubleValue());
-		if (type.equals(Float.class)) return Optional.ofNullable((X) (Float) self.floatValue());
-		return Optional.empty();
+	public <X> X get(Class<X> type) throws ClassCastException {
+		if (type.isInstance(this)) return (X) this;
+		if (type.isInstance(self)) return (X) self;
+		if (type.equals(Long.class)) return (X) (Long) self.longValue();
+		if (type.equals(Double.class)) return (X) (Double) self.doubleValue();
+		if (type.equals(Float.class)) return (X) (Float) self.floatValue();
+		if (type.equals(BigDecimal.class)) return (X) BigDecimal.valueOf(self.doubleValue());
+		throw new ClassCastException("Can't convert to a "+type.getCanonicalName());
 	}
 	
 	public String toString() {return self==null?"NA":self.toString();}
 	
 	public String rCode() {
-		if (self==null) return "NA";
+		if (this.isNa()) return "NA";
 		if (self==Double.POSITIVE_INFINITY) return "Inf";
 		if (self==Double.NEGATIVE_INFINITY) return "-Inf";
 		if (self==Double.NaN) return "NaN";
@@ -126,5 +134,10 @@ public class RNumeric implements RPrimitive, JNIPrimitive  {
 	
 	@Override
 	public <X> X accept(RObjectVisitor<X> visitor) {return visitor.visit(this);}
+	public boolean isNa() {return self == null;}
+
+	public static RNumeric from(double value) {
+		return new RNumeric(value);
+	}
 	
 }

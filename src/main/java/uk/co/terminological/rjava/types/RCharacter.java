@@ -26,6 +26,11 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RCharacter implements RPrimitive, CharSequence, JNIPrimitive {
 
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
+	static final String NA_VALUE = null;
+	public static final RCharacter NA = new RCharacter(NA_VALUE);
+	
 	String self;
 	
 	public RCharacter(String value) {
@@ -82,7 +87,7 @@ public class RCharacter implements RPrimitive, CharSequence, JNIPrimitive {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <X> Optional<X> as(Class<X> type) {
+	public <X> Optional<X> opt(Class<X> type) {
 		if (type.isInstance(this)) return (Optional<X>) Optional.ofNullable((X) this);
 		if (type.isInstance(self)) return (Optional<X>) Optional.ofNullable((X) self);
 		return Optional.empty();
@@ -92,13 +97,26 @@ public class RCharacter implements RPrimitive, CharSequence, JNIPrimitive {
 
 	@Override
 	public String rCode() {
-		return self==null?"NA": RConverter.rQuote(self,"'");
+		return this.isNa()?"NA": RConverter.rQuote(self,"'");
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public String get() {return self;}
 	
+	@SuppressWarnings("unchecked")
+	@Override
+	public <X> X get(Class<X> type) throws ClassCastException {
+		if (type.isInstance(this)) return (X) this;
+		if (type.isInstance(self)) return (X) self;
+		throw new ClassCastException("Can't convert to a "+type.getCanonicalName());
+	}
+	
 	@Override
 	public <X> X accept(RObjectVisitor<X> visitor) {return visitor.visit(this);}
+	public boolean isNa() {return self == null;}
+
+	public static RCharacter from(String value) {
+		return new RCharacter(value);
+	}
 }

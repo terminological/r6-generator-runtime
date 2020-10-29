@@ -1,5 +1,8 @@
 package uk.co.terminological.rjava.types;
 
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 /**
  * Thing list R lists or named lists are collections in a loose sense of the term
  * as they can be iterated over. R has a odd (from a java perspective) approach to 
@@ -12,4 +15,7 @@ package uk.co.terminological.rjava.types;
  */
 public interface RCollection<X extends RObject> extends RObject,Iterable<X> {
 
+	public default Stream<X> stream() {
+		return StreamSupport.stream(this.spliterator(), false);
+	}
 }

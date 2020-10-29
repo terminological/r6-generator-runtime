@@ -29,6 +29,11 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RDate implements RPrimitive, JNIPrimitive  {
 
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
+	static final String NA_VALUE = null;
+	public static final RDate NA = new RDate(NA_VALUE);
+	
 	LocalDate self;
 	
 	static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -49,6 +54,10 @@ public class RDate implements RPrimitive, JNIPrimitive  {
 	
 	public RDate(LocalDate boxed) {
 		self = boxed;
+	}
+	
+	public static RDate from(String s) {
+		return new RDate(s);
 	}
 
 	@Override
@@ -80,19 +89,29 @@ public class RDate implements RPrimitive, JNIPrimitive  {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public <X> Optional<X> as(Class<X> type) {
+	public <X> Optional<X> opt(Class<X> type) {
 		if (type.isInstance(this)) return Optional.ofNullable((X) this);
 		if (type.isInstance(self)) return Optional.ofNullable((X) self);
 		return Optional.empty();
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public <X> X get(Class<X> type) throws ClassCastException {
+		if (type.isInstance(this)) return (X) this;
+		if (type.isInstance(self)) return (X) self;
+		throw new ClassCastException("Can't convert to a "+type.getCanonicalName());
 	}
 	
 	public String toString() {return self==null ? "NA" : self.format(formatter);}
 	
 	@Override
 	public String rCode() {
-		return self==null ? "NA": "as.Date('"+self.format(formatter)+"','%Y-%m-%d')";
+		return this.isNa() ? "NA": "as.Date('"+self.format(formatter)+"','%Y-%m-%d')";
 	}
 	
 	@Override
 	public <X> X accept(RObjectVisitor<X> visitor) {return visitor.visit(this);}
+	
+	public boolean isNa() {return self == null;}
 }

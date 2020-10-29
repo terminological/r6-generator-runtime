@@ -1,7 +1,5 @@
 package uk.co.terminological.rjava.types;
 
-import java.util.Optional;
-
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
 
@@ -29,16 +27,19 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RLogical implements RPrimitive, JNIPrimitive {
 	
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	Boolean self;
 	
-	static final int NA_BOOL = Integer.MIN_VALUE;
+	static final int NA_VALUE = Integer.MIN_VALUE;
+	public static final RLogical NA = new RLogical(NA_VALUE);
 	
 	public RLogical(Boolean value) {
 		self = value;
 	}
 	
 	public RLogical(int value) {
-		if (value == NA_BOOL) {
+		if (value == NA_VALUE) {
 			self = null;
 		} else {
 			if(value != 0) {
@@ -50,7 +51,7 @@ public class RLogical implements RPrimitive, JNIPrimitive {
 	}
 	
 	public RLogical() {
-		this(NA_BOOL);
+		this(NA_VALUE);
 	}
 
 	@Override
@@ -79,24 +80,29 @@ public class RLogical implements RPrimitive, JNIPrimitive {
 	}
 	
 	public int rPrimitive() {
-		return self==null ? NA_BOOL : (self.booleanValue() ? 1 : 0);
+		return this.isNa() ? NA_VALUE : (self.booleanValue() ? 1 : 0);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <X> Optional<X> as(Class<X> type) {
-		if (type.isInstance(this)) return (Optional<X>) Optional.ofNullable((X) this);
-		if (type.isInstance(self)) return (Optional<X>) Optional.ofNullable((X) self);
-		return Optional.empty();
+	public <X> X get(Class<X> type) throws ClassCastException {
+		if (type.isInstance(this)) return (X) this;
+		if (type.isInstance(self)) return (X) self;
+		throw new ClassCastException("Can't convert to a "+type.getCanonicalName());
 	}
 	
-	public String toString() {return self==null?"NA":self.toString();}
+	public String toString() {return this.isNa()?"NA":self.toString();}
 	
-	public String rCode() { return this.toString().toUpperCase(); }
+	public String rCode() { return this.isNa()?"NA":this.toString().toUpperCase(); }
 	
 	@SuppressWarnings("unchecked")
 	public Boolean get() {return self;}
 	
 	@Override
 	public <X> X accept(RObjectVisitor<X> visitor) {return visitor.visit(this);}
+	public boolean isNa() {return self == null;}
+
+	public static RLogical from(int value) {
+		return new RLogical(value);
+	}
 }

@@ -17,6 +17,8 @@ import uk.co.terminological.rjava.RObjectVisitor;
  */
 public class RNamed<X extends RObject> implements RObject, Map.Entry<String,X> {
 
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	private String name;
 	private X object;
 

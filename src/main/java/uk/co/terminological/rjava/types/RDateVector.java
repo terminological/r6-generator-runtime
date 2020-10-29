@@ -27,6 +27,8 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RDateVector extends RVector<RDate> implements JNIPrimitive {
 	
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	public RDateVector(String[] primitives) {
 		for (int i=0; i<primitives.length; i++) this.add(new RDate(primitives[i]));
 	}
@@ -43,7 +45,7 @@ public class RDateVector extends RVector<RDate> implements JNIPrimitive {
 	}
 	
 	public String rCode() {
-		return "as.Date(c("+this.stream().map(s -> s==null?"NA":("'"+s.toString()+"'")).collect(Collectors.joining(", "))+"),'%Y-%m-%d')";
+		return "as.Date(c("+this.stream().map(s -> s.isNa() ? "NA" : ("'"+s.toString()+"'")).collect(Collectors.joining(", "))+"),'%Y-%m-%d')";
 	}
 	
 	@Override

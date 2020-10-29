@@ -11,7 +11,7 @@ import java.util.stream.StreamSupport;
  * The ConvertingCollector interface allows us to specify a set of rules for converting an X into a Y and
  * then apply these to streams, iterators, arrays, collections, and iterables, as well as plain
  * instances. By default all of these conversions are handled through streams. The target data type is essentially
- * somethign that will convert to a R dataframe or vector.
+ * something that will convert to a R dataframe or vector.
  * 
  * @author terminological
  *

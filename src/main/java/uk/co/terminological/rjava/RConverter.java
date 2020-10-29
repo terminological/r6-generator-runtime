@@ -5,8 +5,8 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -42,13 +42,13 @@ public class RConverter {
 	public static RFactorVector convert(int[] array, String[] labels) {	return new RFactorVector(array, labels); }
 	
 	
-	public static RIntegerVector convert(Integer[] array) {	return (RIntegerVector) Stream.of(array).collect(integerCollector()); }
-	public static RNumericVector convert(Double[] array) {	return (RNumericVector) Stream.of(array).collect(doubleCollector()); }
-	public static RNumericVector convert(Long[] array) {	return (RNumericVector) Stream.of(array).collect(longCollector()); }
-	public static RNumericVector convert(Float[] array) {	return (RNumericVector) Stream.of(array).collect(floatCollector()); }
-	public static RNumericVector convert(BigDecimal[] array) {	return (RNumericVector) Stream.of(array).collect(bigDecimalCollector()); }
-	public static RLogicalVector convert(Boolean[] array) {	return (RLogicalVector) Stream.of(array).collect(booleanCollector()); }
-	public static RDateVector convert(LocalDate[] array) {	return (RDateVector) Stream.of(array).collect(dateCollector()); }
+	public static RIntegerVector convert(Integer[] array) {	return Stream.of(array).collect(integerCollector()); }
+	public static RNumericVector convert(Double[] array) {	return Stream.of(array).collect(doubleCollector()); }
+	public static RNumericVector convert(Long[] array) {	return Stream.of(array).collect(longCollector()); }
+	public static RNumericVector convert(Float[] array) {	return Stream.of(array).collect(floatCollector()); }
+	public static RNumericVector convert(BigDecimal[] array) {	return Stream.of(array).collect(bigDecimalCollector()); }
+	public static RLogicalVector convert(Boolean[] array) {	return Stream.of(array).collect(booleanCollector()); }
+	public static RDateVector convert(LocalDate[] array) {	return Stream.of(array).collect(dateCollector()); }
 	
 	@SuppressWarnings("unchecked")
 	public static <X extends Enum<?>> RFactorVector convert(X[] array) {
@@ -69,7 +69,7 @@ public class RConverter {
 	public static RDate convert(LocalDate boxed) {return new RDate(boxed);}
 	
 	@SuppressWarnings("unchecked")
-	public static <X extends RPrimitive> X convertObjectToPrimitive(Object o) {
+	public static <X extends RPrimitive> X convertObjectToPrimitive(Object o) throws UnconvertableTypeException {
 		if (o instanceof Integer) return (X) convert((Integer) o);
 		if (o instanceof Long) return (X) convert((Long) o);
 		if (o instanceof Double) return (X) convert((Double) o);
@@ -79,11 +79,11 @@ public class RConverter {
 		if (o instanceof Enum) return (X) convert((Enum<?>) o);
 		if (o instanceof String) return (X) convert((String) o);
 		if (o instanceof LocalDate) return (X) convert((LocalDate) o);
-		throw new IncompatibleTypeException("Don't know how to convert a: "+o.getClass());
+		throw new UnconvertableTypeException("Don't know how to convert a: "+o.getClass());
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <X extends RVector<?>> X convertObjectToVector(Object o) {
+	public static <X extends RVector<?>> X convertObjectToVector(Object o) throws UnconvertableTypeException {
 		
 		if (o instanceof int[]) return (X) convert((int[]) o);
 		if (o instanceof double[]) return (X) convert((double[]) o);
@@ -99,54 +99,45 @@ public class RConverter {
 		if (o instanceof LocalDate[]) return (X) convert((LocalDate[]) o);
 		if (o instanceof Enum<?>[]) return (X) convert((Enum<?>[]) o);
 		
-		throw new IncompatibleTypeException("Don't know how to convert a: "+o.getClass());
+		throw new UnconvertableTypeException("Don't know how to convert a: "+o.getClass());
 	}
 	
-	public static RObject convertObject(Object invoke) {
+	public static RObject convertObject(Object invoke) throws UnconvertableTypeException {
 		if (invoke instanceof RObject) return (RObject) invoke;
 		try {
 			return convertObjectToPrimitive(invoke);
-		} catch (IncompatibleTypeException e) {
+		} catch (UnconvertableTypeException e) {
 			return convertObjectToVector(invoke);
 		}
 	} 
 	
-	public static <X, Y extends RPrimitive> CollectingConverter<X,Y> using(Collector<X,?,Y> collector) {
+	// COLLECTOR BASED CONVERSION
+	
+	public static <X, Y extends RObject> CollectingConverter<X,Y> using(Collector<X,?,Y> collector) {
 		return CollectingConverter.from(collector);
 	}
 	
-	public static VectorCollector<Integer,RInteger> integerCollector() {return vectorCollector(() -> new RIntegerVector(), (r,i) -> r.add(RConverter.convert(i)));}
-	public static VectorCollector<Long,RNumeric> longCollector() {return vectorCollector(() -> new RNumericVector(), (r,i) -> r.add(RConverter.convert(i)));}
-	public static VectorCollector<Double,RNumeric> doubleCollector() {return vectorCollector(() -> new RNumericVector(), (r,i) -> r.add(RConverter.convert(i)));}
-	public static VectorCollector<BigDecimal,RNumeric> bigDecimalCollector() {return vectorCollector(() -> new RNumericVector(), (r,i) -> r.add(RConverter.convert(i)));}
-	public static VectorCollector<Float,RNumeric> floatCollector() {return vectorCollector(() -> new RNumericVector(), (r,i) -> r.add(RConverter.convert(i)));}
-	public static VectorCollector<Boolean,RLogical> booleanCollector() {return vectorCollector(() -> new RLogicalVector(), (r,i) -> r.add(RConverter.convert(i)));}
-	public static VectorCollector<String,RCharacter> stringCollector() {return vectorCollector(() -> new RCharacterVector(), (r,i) -> r.add(RConverter.convert(i)));}
-	public static VectorCollector<LocalDate,RDate> dateCollector() {return vectorCollector(() -> new RDateVector(), (r,i) -> r.add(RConverter.convert(i)));}
+	// VECTOR COLLECTORS
 	
-	public static <X extends Enum<?>> VectorCollector<X,RFactor> enumCollector(Class<X> enumClass) {
-		String[] labels = Stream.of(enumClass.getEnumConstants()).map(x -> x.toString()).collect(Collectors.toList()).toArray(new String[] {});
-		return vectorCollector(() -> new RFactorVector(labels), (r,i) -> r.add(RConverter.convert(i)));}
+	public static interface VectorCollector<T,X extends RPrimitive, Y extends RVector<X>> extends Collector<T,Y,Y> {}
 	
-	public static interface VectorCollector<T,X extends RPrimitive> extends Collector<T,RVector<X>,RVector<X>> {}
-	
-	private static <T,X extends RPrimitive> VectorCollector<T,X> vectorCollector(Supplier<RVector<X>> supplier, BiConsumer<RVector<X>, T> accumulator) {
-		return new VectorCollector<T,X>() {
+	private static <T,X extends RPrimitive, Y extends RVector<X>> VectorCollector<T,X,Y> vectorCollector(Supplier<Y> supplier, BiConsumer<Y, T> accumulator, Class<Y> type) {
+		return new VectorCollector<T,X,Y>() {
 
 			@Override
-			public Supplier<RVector<X>> supplier() {
+			public Supplier<Y> supplier() {
 				return supplier;
 			}
 
 			@Override
-			public BiConsumer<RVector<X>, T> accumulator() {
+			public BiConsumer<Y, T> accumulator() {
 				return accumulator;
 			}
 
 			@Override
-			public BinaryOperator<RVector<X>> combiner() {
+			public BinaryOperator<Y> combiner() {
 				return (r1,r2) -> {
-					RVector<X> out = supplier().get();
+					Y out = supplier().get();
 					out.addAll(r1);
 					out.addAll(r2);
 					return out;
@@ -154,7 +145,7 @@ public class RConverter {
 			}
 
 			@Override
-			public Function<RVector<X>, RVector<X>> finisher() {
+			public Function<Y, Y> finisher() {
 				return r -> r;
 			}
 
@@ -170,6 +161,71 @@ public class RConverter {
 			
 		};
 	};
+	
+	public static VectorCollector<Integer,RInteger,RIntegerVector> integerCollector() {
+		return vectorCollector(
+			() -> new RIntegerVector(), 
+			(r,i) -> r.add(RConverter.convert(i)), 
+			RIntegerVector.class
+		);
+	}
+	public static VectorCollector<Long,RNumeric,RNumericVector> longCollector() {
+		return vectorCollector(
+			() -> new RNumericVector(), 
+			(r,i) -> r.add(RConverter.convert(i)),
+			RNumericVector.class
+		);}
+	
+	public static VectorCollector<Double,RNumeric,RNumericVector> doubleCollector() {
+		return vectorCollector(
+				() -> new RNumericVector(), 
+				(r,i) -> r.add(RConverter.convert(i)),
+				RNumericVector.class
+		);}
+	public static VectorCollector<BigDecimal,RNumeric,RNumericVector> bigDecimalCollector() {
+		return vectorCollector(
+				() -> new RNumericVector(), 
+				(r,i) -> r.add(RConverter.convert(i)),
+				RNumericVector.class
+		);}
+	public static VectorCollector<Float,RNumeric,RNumericVector> floatCollector() {
+		return vectorCollector(
+				() -> new RNumericVector(), 
+				(r,i) -> r.add(RConverter.convert(i)),
+				RNumericVector.class
+		);}
+	public static VectorCollector<Boolean,RLogical,RLogicalVector> booleanCollector() {return vectorCollector(
+			() -> new RLogicalVector(), 
+			(r,i) -> r.add(RConverter.convert(i)),
+			RLogicalVector.class
+	);}
+	public static VectorCollector<String,RCharacter,RCharacterVector> stringCollector() {return vectorCollector(
+			() -> new RCharacterVector(), 
+			(r,i) -> r.add(RConverter.convert(i)),
+			RCharacterVector.class
+	);}
+	public static VectorCollector<LocalDate,RDate,RDateVector> dateCollector() {
+		return vectorCollector(
+				() -> new RDateVector(), 
+				(r,i) -> r.add(RConverter.convert(i)),
+				RDateVector.class
+		);}
+	public static VectorCollector<String,RDate,RDateVector> dateFromStringCollector() {
+		return vectorCollector(
+				() -> new RDateVector(), 
+				(r,i) -> r.add(RConverter.convert(i==null?(LocalDate) null:LocalDate.parse(i))),
+				RDateVector.class
+		);}
+	public static <X extends Enum<?>> VectorCollector<X,RFactor,RFactorVector> enumCollector(Class<X> enumClass) {
+		String[] labels = Stream.of(enumClass.getEnumConstants()).map(x -> x.toString()).collect(Collectors.toList()).toArray(new String[] {});
+		return vectorCollector(
+				() -> new RFactorVector(labels), 
+				(r,i) -> r.add(RConverter.convert(i)),
+				RFactorVector.class
+				);}
+	
+	
+	
 	
 	/**
 	 * A stream collector that collects a stream of maps and assembles it into a col major dataframe
@@ -279,24 +335,8 @@ public class RConverter {
 			
 		};
 	}
-	
-	public static List<Class<?>> ConvertibleTypes = Arrays.asList(
-		String.class,
-		Integer.class,
-		Enum.class,
-		BigDecimal.class,
-		Float.class,
-		Long.class,
-		Double.class,
-		Boolean.class,
-		LocalDate.class,
-		int[].class,
-		double[].class,
-		boolean[].class,
-		String[].class
-	);
 
-public static String rQuote(String in,String quote) {
+	public static String rQuote(String in,String quote) {
 		String escaped = in;
 	    escaped = escaped.replace("\\", "\\\\");
 	    escaped = escaped.replace(quote, "\\"+quote);
@@ -308,8 +348,19 @@ public static String rQuote(String in,String quote) {
 	    // TODO: escape other non-printing characters using uXXXX notation
 	    return quote+escaped+quote;
 	}
+	
 	public static Object unconvert(RPrimitive rPrimitive) {
 		return rPrimitive.get();
 	}
+	
+	public static <X extends RPrimitive> Optional<X> tryConvertObjectToPrimitive(Object v) {
+		try {
+			X out = convertObjectToPrimitive(v);
+			return Optional.ofNullable(out);
+		} catch (UnconvertableTypeException e) {
+			return Optional.empty();
+		}
+	}
+
 	
 }

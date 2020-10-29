@@ -2,7 +2,10 @@ package uk.co.terminological.rjava;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -27,7 +30,7 @@ public interface MapRule<Y> {
 			if (method.isAccessible() &&
 					method.getParameterCount() == 0 
 					&& (
-							RConverter.ConvertibleTypes.contains(method.getReturnType())
+							ConvertibleTypes.contains(method.getReturnType())
 							|| RObject.class.isAssignableFrom(method.getReturnType()) 
 //									&& RDataframe.supports(method.getGenericParameterTypes()[0])
 //								)
@@ -99,10 +102,26 @@ public interface MapRule<Y> {
 							return RConverter.convertObject(method.invoke(t));
 						} catch (IllegalAccessException | IllegalArgumentException |InvocationTargetException e) {
 							throw new RuntimeException(e);
-						} catch (IncompatibleTypeException e) {
+						} catch (UnconvertableTypeException e) {
 							return new RNull();
 						}
 					}
 		});
 	}
+	
+	static List<Class<?>> ConvertibleTypes = Arrays.asList(
+		String.class,
+		Integer.class,
+		Enum.class,
+		BigDecimal.class,
+		Float.class,
+		Long.class,
+		Double.class,
+		Boolean.class,
+		LocalDate.class,
+		int[].class,
+		double[].class,
+		boolean[].class,
+		String[].class
+	);
 }

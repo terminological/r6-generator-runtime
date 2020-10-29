@@ -26,6 +26,8 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RCharacterVector extends RVector<RCharacter> implements JNIPrimitive {
 	
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	public RCharacterVector(String[] primitives) {
 		for (int i=0; i<primitives.length; i++) this.add(new RCharacter(primitives[i]));
 	}

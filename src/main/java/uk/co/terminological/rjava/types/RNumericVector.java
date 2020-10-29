@@ -25,6 +25,8 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RNumericVector extends RVector<RNumeric> implements JNIPrimitive {
 	
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	public RNumericVector(double[] primitives) {
 		for (int i=0; i<primitives.length; i++) this.add(new RNumeric(primitives[i]));
 	}

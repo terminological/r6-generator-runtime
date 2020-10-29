@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import uk.co.terminological.rjava.RConverter;
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
+import uk.co.terminological.rjava.UnconvertableTypeException;
 
 /** The R List is a flexible untyped list rather like a JSON document. Any kind of content can be included 
  * (as long as it is wrapped as an {@link RObject}). Using content from lists will require type checking
@@ -61,11 +62,13 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RList extends ArrayList<RObject> implements RCollection<RObject> {
 
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	public boolean add(RObject o) {
 		return super.add(o);
 	}
 	
-	public boolean addRaw(Object o) {
+	public boolean addRaw(Object o) throws UnconvertableTypeException {
 		return this.add(RConverter.convertObject(o));
 	}
 	
@@ -74,21 +77,41 @@ public class RList extends ArrayList<RObject> implements RCollection<RObject> {
 		return "list("+this.stream().map(v -> v.rCode()).collect(Collectors.joining(", "))+")";
 	}
 	
-	public RList and(Object... o) {
-		Stream.of(o).forEach(this::addRaw);
+	public RList andRaw(Object... o) throws UnconvertableTypeException {
+		for (Object obj: o) {
+			this.addRaw(obj);
+		}
 		return this;
 	}
 	
-	public static RList with(Object... o) {
+	public static RList withRaw(Object... o) throws UnconvertableTypeException {
+		RList out = new RList();
+		out.andRaw(o);
+		return out;
+	}
+	
+	public static RList with(RObject... o) {
 		RList out = new RList();
 		out.and(o);
 		return out;
 	}
 	
+	public RList and(RObject... o) {
+		Stream.of(o).forEach(this::add);
+		return this;
+	}
+
 	@Override
 	public <X> X accept(RObjectVisitor<X> visitor) {
 		X out = visitor.visit(this);
 		this.forEach(c -> c.accept(visitor));
 		return out;
 	}
+
+	@Override
+	public Stream<RObject> stream() {
+		return super.stream();
+	}
+
+	
 }

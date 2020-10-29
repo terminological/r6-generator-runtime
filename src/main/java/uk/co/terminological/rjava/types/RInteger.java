@@ -1,7 +1,5 @@
 package uk.co.terminological.rjava.types;
 
-import java.util.Optional;
-
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
 
@@ -31,17 +29,25 @@ import uk.co.terminological.rjava.RObjectVisitor;
 )
 public class RInteger implements RPrimitive, JNIPrimitive {
 
+	private static final long serialVersionUID = RObject.datatypeVersion;
 	
 	Integer self = null;
 	
-	static final int NA_INT = Integer.MIN_VALUE;
+	static final int NA_VALUE = Integer.MIN_VALUE;
+	public static final RInteger NA = new RInteger(NA_VALUE);
 	
 	public RInteger(Integer value) {
-		self = value;
+		if (value == null) {
+			self = null;
+		} else if (value.intValue() == NA_VALUE) {
+			self = null;
+		} else {
+			self = value;
+		}
 	}
 	
 	public RInteger(int value) {
-		if ((int) value == NA_INT) {
+		if ((int) value == NA_VALUE) {
 			self = null;
 		} else {
 			self = Integer.valueOf((int) value);
@@ -49,7 +55,7 @@ public class RInteger implements RPrimitive, JNIPrimitive {
 	}
 	
 	public RInteger() {
-		this(NA_INT);
+		this(NA_VALUE);
 	}
 	
 	@Override
@@ -73,25 +79,29 @@ public class RInteger implements RPrimitive, JNIPrimitive {
 	}
 
 	public int rPrimitive() {
-		return self==null ? NA_INT : self.intValue();
+		return self==null ? NA_VALUE : self.intValue();
 	}
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public <X> Optional<X> as(Class<X> type) {
-		if (type.isInstance(this)) return (Optional<X>) Optional.ofNullable((X) this);
-		if (type.isInstance(self)) return (Optional<X>) Optional.ofNullable((X) self);
-		return Optional.empty();
+	public <X> X get(Class<X> type) throws ClassCastException {
+		if (type.isInstance(this)) return (X) this;
+		if (type.isInstance(self)) return (X) self;
+		throw new ClassCastException("Can't convert to a "+type.getCanonicalName());
 	}
 
-	public String toString() {return self==null?"NA":self.toString();}
+	public String toString() {return this.isNa()?"NA":self.toString();}
 	
-	public String rCode() {return self==null?"NA":this.toString()+"L";}
+	public String rCode() {return this.isNa()?"NA":this.toString()+"L";}
 	
 	@SuppressWarnings("unchecked")
 	public Integer get() {return self;}
 	
 	@Override
 	public <X> X accept(RObjectVisitor<X> visitor) {return visitor.visit(this);}
-	
+	public boolean isNa() {return self == null;}
+
+	public static RInteger from(int value) {
+		return new RInteger(value);
+	}
 }

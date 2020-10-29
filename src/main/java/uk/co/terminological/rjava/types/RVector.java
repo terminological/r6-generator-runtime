@@ -11,6 +11,8 @@ import uk.co.terminological.rjava.RConverter;
 
 public abstract class RVector<X extends RPrimitive> extends ArrayList<X> implements RObject {
 
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	public RVector<X> pad(int length) {
 		return rep(na(),length);
 	}

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import uk.co.terminological.rjava.RConverter;
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
+import uk.co.terminological.rjava.UnconvertableTypeException;
 
 /** The R named list is a flexible untyped map rather like a JSON document. Any kind of content can be included 
  * (as long as it is wrapped as an {@link RObject}). Using content from lists will require type checking.
@@ -61,11 +62,13 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RNamedList extends LinkedHashMap<String, RObject> implements RCollection<RNamed<?>>  {
 
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	public RObject put(String s,RObject o) {
 		return super.put(s, o);
 	}
 	
-	public RObject putRaw(String s,Object o) {
+	public RObject putRaw(String s,Object o) throws UnconvertableTypeException {
 		return super.put(s, RConverter.convertObject(o));
 	}
 		
@@ -90,14 +93,14 @@ public class RNamedList extends LinkedHashMap<String, RObject> implements RColle
 		return "list("+this.entrySet().stream().map(kv -> kv.getKey()+"="+kv.getValue().rCode()).collect(Collectors.joining(", "))+")";
 	}
 	
-	public RNamedList and(String s, Object o) {
+	public RNamedList andRaw(String s, Object o) throws UnconvertableTypeException {
 		this.putRaw(s, o);
 		return this;
 	}
 	
-	public static RNamedList with(String s, Object o) {
+	public static RNamedList withRaw(String s, Object o) throws UnconvertableTypeException {
 		RNamedList out = new RNamedList();
-		out.and(s,o);
+		out.andRaw(s,o);
 		return out;
 	}
 
@@ -105,6 +108,17 @@ public class RNamedList extends LinkedHashMap<String, RObject> implements RColle
 	public <X> X accept(RObjectVisitor<X> visitor) {
 		X out = visitor.visit(this);
 		this.iterator().forEachRemaining(c -> c.accept(visitor));
+		return out;
+	}
+
+	public RNamedList and(String s, RObject o) throws UnconvertableTypeException {
+		this.put(s, o);
+		return this;
+	}
+	
+	public static RNamedList with(String s, RObject o) throws UnconvertableTypeException {
+		RNamedList out = new RNamedList();
+		out.and(s,o);
 		return out;
 	}
 }

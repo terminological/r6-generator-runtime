@@ -26,6 +26,8 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RIntegerVector extends RVector<RInteger> implements JNIPrimitive {
 	
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	public RIntegerVector(int[] primitives) {
 		for (int i=0; i<primitives.length; i++) this.add(new RInteger(primitives[i]));
 	}

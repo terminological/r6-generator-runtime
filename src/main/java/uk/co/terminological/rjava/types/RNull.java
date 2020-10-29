@@ -24,6 +24,8 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RNull implements RObject {
 
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	public RNull() {}
 	
 	public String toString() {return "NULL";}
@@ -35,4 +37,8 @@ public class RNull implements RObject {
 	
 	@Override
 	public <X> X accept(RObjectVisitor<X> visitor) {return visitor.visit(this);}
+	
+	public boolean equals(Object other) {
+		return (other instanceof RNull);
+	}
 }

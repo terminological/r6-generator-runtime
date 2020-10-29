@@ -25,6 +25,8 @@ import uk.co.terminological.rjava.RObjectVisitor;
 	)
 public class RLogicalVector extends RVector<RLogical> implements JNIPrimitive {
 	
+	private static final long serialVersionUID = RObject.datatypeVersion;
+	
 	public RLogicalVector(int[] primitives) {
 		for (int i=0; i<primitives.length; i++) this.add(new RLogical(primitives[i]));
 	}
