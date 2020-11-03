@@ -1,9 +1,14 @@
 package uk.co.terminological.rjava.types;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import uk.co.terminological.rjava.IncompatibleTypeException;
 import uk.co.terminological.rjava.RConverter;
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
@@ -35,6 +40,7 @@ import uk.co.terminological.rjava.UnconvertableTypeException;
 				"		else if (is.list(x) & !is.null(names(x))) tmp = ~TO_RNAMEDLIST~(x)",
 				"		else if (is.list(x)) tmp = ~TO_RLIST~(x)",
 				// TODO: add in matrix
+				"		else if (is.array(x) & is.numeric(x)) tmp = ~TO_RNUMERICARRAY~(x)",	
 				// Length one
 				"		else if (length(x) == 1 & is.character(x)) tmp = ~TO_RCHARACTER~(x)",
 				"		else if (length(x) == 1 & is.integer(x)) tmp = ~TO_RINTEGER~(x)",
@@ -120,5 +126,88 @@ public class RNamedList extends LinkedHashMap<String, RObject> implements RColle
 		RNamedList out = new RNamedList();
 		out.and(s,o);
 		return out;
+	}
+	
+	public <X extends RObject> Stream<X> stream(Class<X> subtype) {
+		try { 
+			return this.stream().map(x -> subtype.cast(x.getValue()));
+		} catch (ClassCastException e) {
+			throw new IncompatibleTypeException(e.getMessage());
+		}
+		
+	}
+	
+	public Stream<RObject> streamNode(String key) {
+		RObject node = this.get(key);
+		if (node == null) return Stream.empty();
+		if (node instanceof RPrimitive) return Stream.of((RPrimitive) node);
+		if (node instanceof RVector) return ((RVector<?>) node).stream().map(x -> (RPrimitive) x);
+		if (node instanceof RList) return ((RList) node).stream();
+		if (node instanceof RNamedList) return Stream.of((RNamedList) node);
+		return Stream.empty();
+	}
+	
+	public Stream<RObject> streamPath(String... keys) {
+		Stream<RObject> out = Stream.of(this);
+		for (String key: keys) {
+			out = out.flatMap(t -> ((RNamedList) t).streamNode(key));
+		}
+		return out;
+	}
+	
+	public Optional<String> asString(String key) {
+		RObject tmp = this.get(key);
+		if (tmp instanceof RCharacter) return ((RCharacter) tmp).opt();
+		else return Optional.empty();
+	}
+	
+	public Optional<Double> asDouble(String key) {
+		RObject tmp = this.get(key);
+		if (tmp instanceof RNumeric) return ((RNumeric) tmp).opt();
+		else return Optional.empty();
+	}
+	
+	public Optional<Integer> asInteger(String key) {
+		RObject tmp = this.get(key);
+		if (tmp instanceof RInteger) return ((RInteger) tmp).opt();
+		else return Optional.empty();
+	}
+	
+	//TODO: Other types
+	
+	public Stream<String> asStringVector(String key) {
+		RObject tmp = this.get(key);
+		if (tmp instanceof RCharacterVector) return ((RCharacterVector) tmp).get();
+		else return Stream.empty();
+	}
+	
+	public Stream<Double> asDoubleVector(String key) {
+		RObject tmp = this.get(key);
+		if (tmp instanceof RNumericVector) return ((RNumericVector) tmp).get();
+		else return Stream.empty();
+	}
+	
+	public Stream<Integer> asIntegerVector(String key) {
+		RObject tmp = this.get(key);
+		if (tmp instanceof RIntegerVector) return ((RIntegerVector) tmp).get();
+		else return Stream.empty();
+	}
+
+	public Map<String,Object> asMap() {
+		Map<String,Object> out = new HashMap<>();
+		this.entrySet().stream().forEach(kv -> out.put(kv.getKey(), RConverter.unconvert(kv.getValue())));
+		return null;
+	}
+
+	public static RNamedList create() {
+		return new RNamedList();
+	}
+
+	public <X extends RObject> X getAs(String string, Class<X> type) throws IncompatibleTypeException {
+		try {
+			return type.cast(this.get(string));
+		} catch (ClassCastException e) {
+			throw new IncompatibleTypeException("Expected a "+type.getSimpleName()+" and found a "+this.get(string).getClass().getSimpleName());
+		}
 	}
 }

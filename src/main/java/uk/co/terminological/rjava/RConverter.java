@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -25,8 +26,10 @@ import uk.co.terminological.rjava.types.RFactor;
 import uk.co.terminological.rjava.types.RFactorVector;
 import uk.co.terminological.rjava.types.RInteger;
 import uk.co.terminological.rjava.types.RIntegerVector;
+import uk.co.terminological.rjava.types.RList;
 import uk.co.terminological.rjava.types.RLogical;
 import uk.co.terminological.rjava.types.RLogicalVector;
+import uk.co.terminological.rjava.types.RNamedList;
 import uk.co.terminological.rjava.types.RNumeric;
 import uk.co.terminological.rjava.types.RNumericVector;
 import uk.co.terminological.rjava.types.RObject;
@@ -249,8 +252,8 @@ public class RConverter {
 				return (lhm,rhm) -> {
 					synchronized(this) {
 						RDataframe out = new RDataframe();
-						out.append(lhm);
-						out.append(rhm);
+						out.bindRows(lhm);
+						out.bindRows(rhm);
 						return out;
 					}
 				};
@@ -310,8 +313,8 @@ public class RConverter {
 			public BinaryOperator<RDataframe> combiner() {
 				return (lhm,rhm) -> {
 					RDataframe out = new RDataframe();
-					out.append(lhm);
-					out.append(rhm);
+					out.bindRows(lhm);
+					out.bindRows(rhm);
 					return out;
 				};
 			}
@@ -353,6 +356,14 @@ public class RConverter {
 		return rPrimitive.get();
 	}
 	
+	public static Object unconvert(RObject rObject) {
+		if (rObject instanceof RPrimitive) return unconvert((RPrimitive) rObject);
+		if (rObject instanceof RVector) return unconvert((RVector<?>) rObject);
+		if (rObject instanceof RList) return unconvert((RList) rObject);
+		if (rObject instanceof RNamedList) return unconvert((RNamedList) rObject);
+		throw new IncompatibleTypeException("could not unconvert "+rObject.getClass().getSimpleName());
+	}
+	
 	public static <X extends RPrimitive> Optional<X> tryConvertObjectToPrimitive(Object v) {
 		try {
 			X out = convertObjectToPrimitive(v);
@@ -361,6 +372,15 @@ public class RConverter {
 			return Optional.empty();
 		}
 	}
-
-	
+	public static List<Object> unconvert(RVector<?> rVector) {
+		return rVector.stream().map(x -> RConverter.unconvert(x)).collect(Collectors.toList());
+	}
+	public static List<Object> unconvert(RList rVector) {
+		return rVector.stream().map(x -> RConverter.unconvert(x)).collect(Collectors.toList());
+	}
+	public static Map<String,Object> unconvert(RNamedList rVector) {
+		HashMap<String,Object> out = new HashMap<>();
+		rVector.stream().forEach(x -> out.put(x.getKey(), RConverter.unconvert(x.getValue())));
+		return out;
+	}
 }

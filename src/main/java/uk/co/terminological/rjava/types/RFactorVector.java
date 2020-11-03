@@ -1,6 +1,9 @@
 package uk.co.terminological.rjava.types;
 
+import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -35,14 +38,21 @@ import uk.co.terminological.rjava.RObjectVisitor;
 public class RFactorVector extends RVector<RFactor> {
 	
 	private static final long serialVersionUID = RObject.datatypeVersion;
+	// transient HashMap<Integer,List<Integer>> index = new HashMap<>();
 	
 	private String[] levels;
 	public RFactorVector(int[] values, String[] levels) {
-		for (int i=0; i<values.length; i++) this.add(new RFactor(values[i], levels[values[i]-1]));
+		super(values.length);
+		for (int i=0; i<values.length; i++) {
+			this.add(new RFactor(values[i], levels[values[i]-1]));
+//			if(!index.containsKey(values[i])) index.put(values[i], new ArrayList<>());
+//			index.get(values[i]).add(i);
+		}
 		this.levels = levels;
 		//factors are 1 indexed - java arrays zero indexed
 	}
 	public RFactorVector() {super();}
+	public RFactorVector(int length) {super(length);}
 	public RFactorVector(String[] levels) {
 		super();
 		this.levels = levels;
@@ -57,12 +67,12 @@ public class RFactorVector extends RVector<RFactor> {
 		String[] obs = IntStream.range(0, tmp.size()).mapToObj(i -> tmp.getOrDefault(i, "unknown_"+i)).collect(Collectors.toList()).toArray(new String[] {});
 		return obs;
 	}
-	@Override
-	public RFactor na() {return new RFactor();}
+	
 	@Override
 	public Class<RFactor> getType() {
 		return RFactor.class;
 	}
+
 	
 	public String rCode() {
 		return "ordered(x=c("+
@@ -77,5 +87,26 @@ public class RFactorVector extends RVector<RFactor> {
 		X out = visitor.visit(this);
 		this.forEach(c -> c.accept(visitor));
 		return out;
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public Stream<String> get() {
+		return this.stream().map(ri -> ri.get());
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Stream<Optional<String>> opt() {
+		return this.stream().map(s -> s.opt());
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public RFactorVector and(RFactor... o) {
+		this.addAll(Arrays.asList(o));
+		return this;
+	}
+	public static RFactorVector empty() {
+		return new RFactorVector();
 	}
 }

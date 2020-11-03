@@ -27,6 +27,10 @@ public class RNamed<X extends RObject> implements RObject, Map.Entry<String,X> {
 		this.object = object;
 	}
 
+	public RNamed(Entry<String, X> next) {
+		this(next.getKey(), next.getValue());
+	}
+
 	@Override
 	public String getKey() {
 		return name;

@@ -18,4 +18,8 @@ public interface RCollection<X extends RObject> extends RObject,Iterable<X> {
 	public default Stream<X> stream() {
 		return StreamSupport.stream(this.spliterator(), false);
 	}
+	
+	public default Stream<X> parallelStream() {
+		return StreamSupport.stream(this.spliterator(), true);
+	}
 }

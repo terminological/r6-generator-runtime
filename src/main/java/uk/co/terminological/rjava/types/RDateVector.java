@@ -1,6 +1,10 @@
 package uk.co.terminological.rjava.types;
 
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
@@ -30,15 +34,16 @@ public class RDateVector extends RVector<RDate> implements JNIPrimitive {
 	private static final long serialVersionUID = RObject.datatypeVersion;
 	
 	public RDateVector(String[] primitives) {
+		super(primitives.length);
 		for (int i=0; i<primitives.length; i++) this.add(new RDate(primitives[i]));
 	}
 	public RDateVector() {super();}
+	public RDateVector(int length) {super(length);}
 	
 	public String[] rPrimitive() {
 		return this.stream().map(ri -> ri.rPrimitive()).collect(Collectors.toList()).toArray(new String[] {});
 	}
-	@Override
-	public RDate na() {return new RDate();}
+	
 	@Override
 	public Class<RDate> getType() {
 		return RDate.class;
@@ -53,5 +58,25 @@ public class RDateVector extends RVector<RDate> implements JNIPrimitive {
 		X out = visitor.visit(this);
 		this.forEach(c -> c.accept(visitor));
 		return out;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Stream<LocalDate> get() {
+		return this.stream().map(ri -> ri.get());
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Stream<Optional<LocalDate>> opt() {
+		return this.stream().map(s -> s.opt());
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public RDateVector and(RDate... o) {
+		this.addAll(Arrays.asList(o));
+		return this;
+	}
+	public static RDateVector empty() {
+		return new RDateVector();
 	}
 }

@@ -28,6 +28,7 @@ public interface RObjectVisitor<X> {
 	public X visit(RCharacter c);
 	public X visit(RCharacterVector c);
 	public X visit(RDataframe c);
+	public X visit(RDataframeRow c);
 	public X visit(RDate c);
 	public X visit(RDateVector c);
 	public X visit(RFactor c);
@@ -43,6 +44,7 @@ public interface RObjectVisitor<X> {
 	public X visit(RNull c);
 	public X visit(RNumeric c);
 	public X visit(RNumericVector c);
+	public X visit(RArray<?> rArray);
 	
 	
 	/** Default visitor implemementation that returns an optional empty value for every visit.
@@ -58,6 +60,7 @@ public interface RObjectVisitor<X> {
 		public Optional<Y> visit(RCharacter c) {return Optional.empty();}
 		public Optional<Y> visit(RCharacterVector c) {return Optional.empty();}
 		public Optional<Y> visit(RDataframe c) {return Optional.empty();}
+		public Optional<Y> visit(RDataframeRow c) {return Optional.empty();}
 		public Optional<Y> visit(RDate c) {return Optional.empty();}
 		public Optional<Y> visit(RDateVector c) {return Optional.empty();}
 		public Optional<Y> visit(RFactor c) {return Optional.empty();}
@@ -73,12 +76,14 @@ public interface RObjectVisitor<X> {
 		public Optional<Y> visit(RNull c) {return Optional.empty();}
 		public Optional<Y> visit(RNumeric c) {return Optional.empty();}
 		public Optional<Y> visit(RNumericVector c) {return Optional.empty();}
+		public Optional<Y> visit(RArray<?> c) {return Optional.empty();}
 	}
 	
 	public static class Default implements RObjectVisitor<Void> {
 		public Void visit(RCharacter c) {return null;}
 		public Void visit(RCharacterVector c) {return null;}
 		public Void visit(RDataframe c) {return null;}
+		public Void visit(RDataframeRow c) {return null;}
 		public Void visit(RDate c) {return null;}
 		public Void visit(RDateVector c) {return null;}
 		public Void visit(RFactor c) {return null;}
@@ -94,6 +99,7 @@ public interface RObjectVisitor<X> {
 		public Void visit(RNull c) {return null;}
 		public Void visit(RNumeric c) {return null;}
 		public Void visit(RNumericVector c) {return null;}
+		public Void visit(RArray<?> c) {return null;}
 	}
 	
 	/** This abstract visitor will visit each node once and collect the result into a 
@@ -138,7 +144,18 @@ public interface RObjectVisitor<X> {
 			if (visited.contains(c)) return Optional.empty();
 			else {
 				visited.add(c);
-				return visitOnce(c);
+				Optional<Y> tmp = visitOnce(c);
+				tmp.ifPresent(collection::add);
+				return tmp;
+			}
+		}
+		public Optional<Y> visit(RDataframeRow c) {
+			if (visited.contains(c)) return Optional.empty();
+			else {
+				visited.add(c);
+				Optional<Y> tmp = visitOnce(c);
+				tmp.ifPresent(collection::add);
+				return tmp;
 			}
 		}
 		public Optional<Y> visit(RDate c) {
@@ -251,10 +268,18 @@ public interface RObjectVisitor<X> {
 				tmp.ifPresent(collection::add);
 				return tmp;
 			}}
+		public Optional<Y> visit(RArray<?> c) {if (visited.contains(c)) return Optional.empty();
+		else {
+			visited.add(c);
+			Optional<Y> tmp = visitOnce(c);
+			tmp.ifPresent(collection::add);
+			return tmp;
+		}}
 		
 		public abstract Optional<Y> visitOnce(RCharacter c);
 		public abstract Optional<Y> visitOnce(RCharacterVector c);
 		public abstract Optional<Y> visitOnce(RDataframe c);
+		public abstract Optional<Y> visitOnce(RDataframeRow c);
 		public abstract Optional<Y> visitOnce(RDate c);
 		public abstract Optional<Y> visitOnce(RDateVector c);
 		public abstract Optional<Y> visitOnce(RFactor c);
@@ -270,12 +295,14 @@ public interface RObjectVisitor<X> {
 		public abstract Optional<Y> visitOnce(RNull c);
 		public abstract Optional<Y> visitOnce(RNumeric c);
 		public abstract Optional<Y> visitOnce(RNumericVector c);
+		public abstract Optional<Y> visitOnce(RArray<?> c);
 	}
 	
 	public static class DefaultOnceOnly<Y> extends OnceOnly<Y> {
 		public Optional<Y> visitOnce(RCharacter c) {return Optional.empty();}
 		public Optional<Y> visitOnce(RCharacterVector c) {return Optional.empty();}
 		public Optional<Y> visitOnce(RDataframe c) {return Optional.empty();}
+		public Optional<Y> visitOnce(RDataframeRow c) {return Optional.empty();}
 		public Optional<Y> visitOnce(RDate c) {return Optional.empty();}
 		public Optional<Y> visitOnce(RDateVector c) {return Optional.empty();}
 		public Optional<Y> visitOnce(RFactor c) {return Optional.empty();}
@@ -291,5 +318,8 @@ public interface RObjectVisitor<X> {
 		public Optional<Y> visitOnce(RNull c) {return Optional.empty();}
 		public Optional<Y> visitOnce(RNumeric c) {return Optional.empty();}
 		public Optional<Y> visitOnce(RNumericVector c) {return Optional.empty();}
+		public Optional<Y> visitOnce(RArray<?> c) {return Optional.empty();}
 	}
+
+	
 }

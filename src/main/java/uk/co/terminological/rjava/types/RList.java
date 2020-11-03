@@ -35,6 +35,7 @@ import uk.co.terminological.rjava.UnconvertableTypeException;
 				"		else if (is.list(x) & !is.null(names(x))) tmp = ~TO_RNAMEDLIST~(x)",
 				"		else if (is.list(x)) tmp = ~TO_RLIST~(x)",
 				// TODO: add in matrix
+				"		else if (is.array(x) & is.numeric(x)) tmp = ~TO_RNUMERICARRAY~(x)",	
 				// Length one
 				"		else if (length(x) == 1 & is.character(x)) tmp = ~TO_RCHARACTER~(x)",
 				"		else if (length(x) == 1 & is.integer(x)) tmp = ~TO_RINTEGER~(x)",
@@ -111,6 +112,11 @@ public class RList extends ArrayList<RObject> implements RCollection<RObject> {
 	@Override
 	public Stream<RObject> stream() {
 		return super.stream();
+	}
+
+	@Override
+	public Stream<RObject> parallelStream() {
+		return super.parallelStream();
 	}
 
 	

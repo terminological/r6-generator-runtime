@@ -1,5 +1,11 @@
 package uk.co.terminological.rjava.types;
 
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
 
@@ -33,11 +39,13 @@ public class RIntegerVector extends RVector<RInteger> implements JNIPrimitive {
 	}
 	public RIntegerVector() {super();}
 	
+	public RIntegerVector(int length) {
+		super(length);
+	}
 	public int[] rPrimitive() {
 		return this.stream().mapToInt(ri -> ri.rPrimitive()).toArray();
 	}
-	@Override
-	public RInteger na() {return new RInteger();}
+	
 	@Override
 	public Class<RInteger> getType() {
 		return RInteger.class;
@@ -48,5 +56,25 @@ public class RIntegerVector extends RVector<RInteger> implements JNIPrimitive {
 		X out = visitor.visit(this);
 		this.forEach(c -> c.accept(visitor));
 		return out;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Stream<Integer> get() {
+		return this.stream().map(r -> r.get());
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Stream<Optional<Integer>> opt() {
+		return this.stream().map(s -> s.opt());
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public RIntegerVector and(RInteger... o) {
+		this.addAll(Arrays.asList(o));
+		return this;
+	}
+	public static RIntegerVector empty() {
+		return new RIntegerVector();
 	}
 }

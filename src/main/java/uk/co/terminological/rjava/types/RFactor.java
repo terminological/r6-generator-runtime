@@ -79,15 +79,15 @@ public class RFactor implements RPrimitive {
 		if (getClass() != obj.getClass())
 			return false;
 		RFactor other = (RFactor) obj;
-		if (label == null) {
-			if (other.label != null)
-				return false;
-		} else if (!label.equals(other.label))
-			return false;
 		if (self == null) {
 			if (other.self != null)
 				return false;
 		} else if (!self.equals(other.self))
+			return false;
+		if (label == null) {
+			if (other.label != null)
+				return false;
+		} else if (!label.equals(other.label))
 			return false;
 		return true;
 	}
