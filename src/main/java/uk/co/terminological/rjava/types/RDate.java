@@ -114,4 +114,8 @@ public class RDate implements RPrimitive, JNIPrimitive  {
 	public <X> X accept(RObjectVisitor<X> visitor) {return visitor.visit(this);}
 	
 	public boolean isNa() {return self == null;}
+	
+	public String asCsv() {
+		return toString();
+	}
 }

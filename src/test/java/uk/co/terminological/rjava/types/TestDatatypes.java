@@ -312,7 +312,7 @@ class TestDatatypes {
 			return RDataframe.create().withCol("mean price",RConverter.convert(mean)); 
 		});
 		System.out.println(diaSummary.nrow());
-		System.out.print(diaSummary);		
+		System.out.print(dia.count().filter("n",RInteger.class, n -> n.get() > 1));		
 	}
 	
 	public static void main(String[] args) throws IOException, UnconvertableTypeException {
@@ -324,17 +324,17 @@ class TestDatatypes {
 		}
 		RDataframe dia = getDiamonds();
 		long time = System.currentTimeMillis();
-		for (int j=0; j<100; j++) {
+		for (int j=0; j<1000; j++) {
 			
 			RDataframe diaSummary = dia.groupBy("cut","color","carat").groupModify((d,g) -> {
 				Double mean = d.pull("price",RIntegerVector.class).get().collect(Collectors.averagingDouble(x -> (double) x));
 				return RDataframe.create().withCol("mean price",RConverter.convert(mean)); 
 			});
 			System.out.println(diaSummary.nrow());
-			System.out.println(diaSummary);
+			//System.out.println(diaSummary);
 			
 		}
-		System.out.println("Took for 100 (ms): "+(System.currentTimeMillis()-time));
+		System.out.println("Took for 1000 (ms): "+(System.currentTimeMillis()-time));
 		{
 		System.out.print("Press a key");
 		int i= -1;

@@ -109,4 +109,6 @@ public class RFactorVector extends RVector<RFactor> {
 	public static RFactorVector empty() {
 		return new RFactorVector();
 	}
+	
+	public void fillNA(int length) {this.fill(RFactor.NA, length);}
 }

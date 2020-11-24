@@ -57,5 +57,9 @@ public interface RPrimitive extends RObject {
 	public static RFactor na(RFactor v) {return new RFactor();}
 	public static RLogical na(RLogical v) {return new RLogical();}
 	public static RDate na(RDate v) {return new RDate();}
+	
+	public default String asCsv() {
+		return rCode();
+	}
 
 }

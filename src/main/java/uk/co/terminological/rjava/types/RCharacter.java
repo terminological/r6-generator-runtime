@@ -1,6 +1,8 @@
 package uk.co.terminological.rjava.types;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import uk.co.terminological.rjava.RConverter;
 import uk.co.terminological.rjava.RDataType;
@@ -119,4 +121,8 @@ public class RCharacter implements RPrimitive, CharSequence, JNIPrimitive {
 	public static RCharacter from(String value) {
 		return new RCharacter(value);
 	}
+
+	
+	
+
 }

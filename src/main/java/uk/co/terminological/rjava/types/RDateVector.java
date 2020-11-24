@@ -79,4 +79,6 @@ public class RDateVector extends RVector<RDate> implements JNIPrimitive {
 	public static RDateVector empty() {
 		return new RDateVector();
 	}
+	
+	public void fillNA(int length) {this.fill(RDate.NA, length);}
 }

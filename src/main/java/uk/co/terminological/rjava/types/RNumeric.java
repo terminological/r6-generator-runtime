@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
+import uk.co.terminological.rjava.UnexpectedNaValueException;
 
 /**
  * The numeric wrapper handles the translation of R numerics to Java Double.class while the value is passed 
@@ -139,5 +140,15 @@ public class RNumeric implements RPrimitive, JNIPrimitive  {
 	public static RNumeric from(double value) {
 		return new RNumeric(value);
 	}
+
+	public double javaPrimitive(double naValue) {
+		return this.self == null ? naValue : this.self;
+	}
+
+	public double javaPrimitive() throws UnexpectedNaValueException {
+		if (this.self == null) throw new UnexpectedNaValueException();
+		return this.self.doubleValue();
+	}
+	
 	
 }

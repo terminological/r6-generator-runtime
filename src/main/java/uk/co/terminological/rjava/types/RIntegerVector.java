@@ -77,4 +77,9 @@ public class RIntegerVector extends RVector<RInteger> implements JNIPrimitive {
 	public static RIntegerVector empty() {
 		return new RIntegerVector();
 	}
+	public void fillNA(int length) {this.fill(RInteger.NA, length);}
+	
+	public int[] javaPrimitive(int naValue) {
+		return this.stream().mapToInt(ri -> ri.javaPrimitive(naValue)).toArray();
+	}
 }

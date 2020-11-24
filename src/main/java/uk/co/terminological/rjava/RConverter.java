@@ -1,7 +1,9 @@
 package uk.co.terminological.rjava;
 
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +32,7 @@ import uk.co.terminological.rjava.types.RList;
 import uk.co.terminological.rjava.types.RLogical;
 import uk.co.terminological.rjava.types.RLogicalVector;
 import uk.co.terminological.rjava.types.RNamedList;
+import uk.co.terminological.rjava.types.RNamedPrimitives;
 import uk.co.terminological.rjava.types.RNumeric;
 import uk.co.terminological.rjava.types.RNumericVector;
 import uk.co.terminological.rjava.types.RObject;
@@ -83,6 +86,23 @@ public class RConverter {
 		if (o instanceof String) return (X) convert((String) o);
 		if (o instanceof LocalDate) return (X) convert((LocalDate) o);
 		throw new UnconvertableTypeException("Don't know how to convert a: "+o.getClass());
+	}
+	
+	public static <X extends RPrimitive> Optional<X> tryConvertObjectToPrimitive(Object v) {
+		try {
+			X out = convertObjectToPrimitive(v);
+			return Optional.ofNullable(out);
+		} catch (UnconvertableTypeException e) {
+			return Optional.empty();
+		}
+	}
+	
+	protected static RPrimitive convertObjectToPrimitiveUnsafe(Object tmp2) {
+		try {	
+			return convertObjectToPrimitive(tmp2);
+		} catch (UnconvertableTypeException e) {
+			throw new IncompatibleTypeException("Unsupported type: "+tmp2.getClass().getSimpleName(), e);
+		}
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -228,7 +248,26 @@ public class RConverter {
 				);}
 	
 	
-	
+	@SuppressWarnings("unchecked")
+	public static <X> Collector<X,?,RDataframe> annotatedCollector(Class<X> type) {
+		List<MapRule<X>> rules = new ArrayList<>();
+		for (Method m :type.getMethods()) {
+			if(m.isAnnotationPresent(RName.class)) {
+				rules.add(
+					mapping(
+						m.getAnnotation(RName.class).value(),
+						o -> {
+							try {
+								return m.invoke(o);
+							} catch (Exception e) {
+								throw new RuntimeException(e);
+							}
+						})
+				);
+			}
+		}
+		return dataframeCollector((MapRule<X>[]) rules.toArray(new MapRule[0]));
+	}
 	
 	/**
 	 * A stream collector that collects a stream of maps and assembles it into a col major dataframe
@@ -299,12 +338,14 @@ public class RConverter {
 			public BiConsumer<RDataframe, X> accumulator() {
 				return (lhm, o) -> {
 					synchronized(lhm) {
+						RNamedPrimitives tmp = new RNamedPrimitives();
 						for (MapRule<X> rule: rules) {
-							Map<String,Object> tmp = new HashMap<>();
+							//TODO: this woudl possibly be quicker with an interim List<RVector<?>> collectors and a finisher which assembled them.
+							//Maybe wouldn't make huge difference....
 							Object tmp2 = rule.rule().apply(o);
-							tmp.put(rule.label(), tmp2);
-							lhm.addRow(tmp);;
+							tmp.put(rule.label(), RConverter.convertObjectToPrimitiveUnsafe(tmp2));
 						}
+						lhm.addRow(tmp);
 					}
 				};
 			}
@@ -333,12 +374,77 @@ public class RConverter {
 								Characteristics.IDENTITY_FINISH
 								));
 			}
-	
-			
-			
 		};
 	}
 
+	/**
+	 * A stream collector that applies mapping rules and coverts a stream of objects into a dataframe
+	 * @param rules - an array of mapping(X.class, "colname", x -> x.getValue()) entries that define
+	 * the data frame columns
+	 * @return A collector that works in a stream.collect(RConvert.toDataFrame(mapping1, mapping2, ...))
+	 */
+	@SafeVarargs
+	public static <X,W> Collector<X,?,RDataframe> flatteningDataframeCollector(final StreamRule<X,W> streamRule, final MapRule<X>... rules) {
+		return new Collector<X,RDataframe,RDataframe>() {
+	
+			@Override
+			public Supplier<RDataframe> supplier() {
+				return () -> new RDataframe();
+			}
+	
+			@Override
+			public BiConsumer<RDataframe, X> accumulator() {
+				return (lhm, o) -> {
+					synchronized(lhm) {
+						RNamedPrimitives tmp = new RNamedPrimitives();
+						for (MapRule<X> rule: rules) {
+							//TODO: this woudl possibly be quicker with an interim List<RVector<?>> collectors and a finisher which assembled them.
+							//Maybe wouldn't make huge difference....
+							Object tmp2 = rule.rule().apply(o);
+							tmp.put(rule.label(), RConverter.convertObjectToPrimitiveUnsafe(tmp2));
+						}
+						Stream<W> st = streamRule.streamRule().apply(o);
+						st.forEach(w -> {
+							RNamedPrimitives tmp2 = new RNamedPrimitives(tmp);
+							for (MapRule<W> rule: streamRule.mapRules()) {
+								Object tmp3 = rule.rule().apply(w);
+								tmp2.put(rule.label(), RConverter.convertObjectToPrimitiveUnsafe(tmp3));
+							}
+							lhm.addRow(tmp2);
+						});
+					}
+				};
+			}
+	
+			@Override
+			public BinaryOperator<RDataframe> combiner() {
+				return (lhm,rhm) -> {
+					RDataframe out = new RDataframe();
+					out.bindRows(lhm);
+					out.bindRows(rhm);
+					return out;
+				};
+			}
+	
+			@Override
+			public Function<RDataframe, RDataframe> finisher() {
+				return a -> a;
+			}
+	
+			@Override
+			public Set<Characteristics> characteristics() {
+				return new HashSet<>(
+						Arrays.asList(
+								Characteristics.UNORDERED,
+								Characteristics.CONCURRENT,
+								Characteristics.IDENTITY_FINISH
+								));
+			}
+		};
+	}
+
+	
+	
 	public static String rQuote(String in,String quote) {
 		String escaped = in;
 	    escaped = escaped.replace("\\", "\\\\");
@@ -364,14 +470,8 @@ public class RConverter {
 		throw new IncompatibleTypeException("could not unconvert "+rObject.getClass().getSimpleName());
 	}
 	
-	public static <X extends RPrimitive> Optional<X> tryConvertObjectToPrimitive(Object v) {
-		try {
-			X out = convertObjectToPrimitive(v);
-			return Optional.ofNullable(out);
-		} catch (UnconvertableTypeException e) {
-			return Optional.empty();
-		}
-	}
+	
+	
 	public static List<Object> unconvert(RVector<?> rVector) {
 		return rVector.stream().map(x -> RConverter.unconvert(x)).collect(Collectors.toList());
 	}
@@ -383,4 +483,80 @@ public class RConverter {
 		rVector.stream().forEach(x -> out.put(x.getKey(), RConverter.unconvert(x.getValue())));
 		return out;
 	}
+	
+	/**
+	 * Create a mapping using a to allow us to extract data from an object of type defined by clazz and associate it
+	 * with a label. This can be used to create a custom data mapping. e.g.
+	 * 
+	 * mapping("absolutePath", f -> f.getAbsolutePath())
+	 * 
+	 * If the compiler cannot work out the type from the context it may be necessary to use the 3 parameter version 
+	 * of this method.
+	 * 
+	 * @param label - the target column label in the R dataframe
+	 * @param rule -  a lambda mapping an instance of clazz to the value of the column 
+	 * @return
+	 */
+	public static <Z> MapRule<Z> mapping(final String label, final Function<Z,Object> rule) {
+		return new MapRule<Z>() {
+			@Override
+			public String label() {
+				return label;
+			}
+			@Override
+			public Function<Z, Object> rule() {
+				return rule;
+			}
+		};
+	}
+	
+	/**
+	 * Create a mapping using a to allow us to extract data from an object of type defined by clazz and associate it
+	 * with a label. This can be used to create a custom data mapping. e.g.
+	 * 
+	 * mapping("absolutePath", f -> f.getAbsolutePath())
+	 * 
+	 * If the compiler cannot work out the type from the context it may be necessary to use the 3 parameter version 
+	 * of this method.
+	 * 
+	 * @param label - the target column label in the R dataframe
+	 * @param rule -  a lambda mapping an instance of clazz to the value of the column 
+	 * @return
+	 */
+	@SafeVarargs
+	public static <Z,W> StreamRule<Z,W> flatMapping(final Function<Z,Stream<W>> streamRule, final MapRule<W>... rule) {
+		return new StreamRule<Z,W>() {
+
+			@Override
+			public Function<Z, Stream<W>> streamRule() {
+				return streamRule;
+			}
+
+			@Override
+			public List<MapRule<W>> mapRules() {
+				return Arrays.asList(rule);
+			}
+			
+		};
+		
+	}
+	
+	/**
+	 * Create a mapping using a to allow us to extract data from an object of type defined by clazz and associate it
+	 * with a label. This can be used to create a custom data mapping. e.g.
+	 * 
+	 * mapping(File.class, "absolutePath", f -> f.getAbsolutePath())
+	 * 
+	 * Typically this function will be imported statically:
+	 * 
+	 * import static uk.co.terminological.jsr223.RConvert.*; 
+	 * @param clazz - a class maybe required to guide the compiler to use the correct lambda function
+	 * @param label - the target column label in the R dataframe
+	 * @param rule -  a lambda mapping an instance of clazz to the value of the column 
+	 * @return a mapping rule
+	 */
+	public static <Z> MapRule<Z> mapping(final Class<Z> clazz, final String label, final Function<Z,Object> rule) {
+		return mapping(label,rule);
+	}
+	
 }

@@ -118,6 +118,9 @@ public class RList extends ArrayList<RObject> implements RCollection<RObject> {
 	public Stream<RObject> parallelStream() {
 		return super.parallelStream();
 	}
-
+	
+	public String toString() {
+		return "<rlist>{\n"+this.stream().map(kv -> kv.toString() ).collect(Collectors.joining(",\n"))+"\n}";
+	}
 	
 }

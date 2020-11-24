@@ -1,5 +1,7 @@
 package uk.co.terminological.rjava.types;
 
+import java.util.Arrays;
+
 import uk.co.terminological.rjava.RConverter;
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
@@ -30,10 +32,8 @@ public class RFactor implements RPrimitive {
 
 	private static final long serialVersionUID = RObject.datatypeVersion;
 	
-	
-	
 	Integer self;
-	String label;
+	char[] label;
 	
 	static final int NA_VALUE = Integer.MIN_VALUE;
 	static final String NA_LABEL = "NA";
@@ -50,10 +50,10 @@ public class RFactor implements RPrimitive {
 	public RFactor(int value, String label) {
 		if ((int) value == NA_VALUE) {
 			this.self = null;
-			this.label = NA_LABEL;
+			this.label = NA_LABEL.toCharArray();
 		} else {
 			this.self = Integer.valueOf((int) value);
-			this.label = label;
+			this.label = label.toCharArray();
 		}
 	}
 	
@@ -61,11 +61,13 @@ public class RFactor implements RPrimitive {
 		this(NA_VALUE, "NA");
 	}
 
+	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((label == null) ? 0 : label.hashCode());
+		result = prime * result + Arrays.hashCode(label);
 		result = prime * result + ((self == null) ? 0 : self.hashCode());
 		return result;
 	}
@@ -76,7 +78,7 @@ public class RFactor implements RPrimitive {
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (!(obj instanceof RFactor))
 			return false;
 		RFactor other = (RFactor) obj;
 		if (self == null) {
@@ -84,15 +86,10 @@ public class RFactor implements RPrimitive {
 				return false;
 		} else if (!self.equals(other.self))
 			return false;
-		if (label == null) {
-			if (other.label != null)
-				return false;
-		} else if (!label.equals(other.label))
-			return false;
-		return true;
+		return Arrays.equals(label, other.label);
 	}
 	
-	public String rLabel() {return label;}
+	public String rLabel() {return label.toString();}
 
 	public int rValue() {
 		return self == null ? NA_VALUE : self.intValue();
@@ -109,7 +106,7 @@ public class RFactor implements RPrimitive {
 	}
 	
 	
-	public String toString() {return self==null? NA_LABEL : label.toString();}
+	public String toString() {return self==null? NA_LABEL : String.valueOf(label);}
 	
 	public String rCode() {
 		if (this.isNa()) return "NA";
@@ -117,7 +114,7 @@ public class RFactor implements RPrimitive {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public String get() {return label;}
+	public String get() {return label.toString();}
 	
 	@Override
 	public <X> X accept(RObjectVisitor<X> visitor) {return visitor.visit(this);}

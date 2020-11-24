@@ -2,6 +2,7 @@ package uk.co.terminological.rjava.types;
 
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
+import uk.co.terminological.rjava.UnexpectedNaValueException;
 
 /**
  * The integer wrapper handles the translation of R integers to Java Integer.class while the value is passed 
@@ -103,5 +104,14 @@ public class RInteger implements RPrimitive, JNIPrimitive {
 
 	public static RInteger from(int value) {
 		return new RInteger(value);
+	}
+
+	public int javaPrimitive(int naValue) {
+		return this.self == null ? naValue : this.self;
+	}
+	
+	public int javaPrimitive() throws UnexpectedNaValueException {
+		if (this.self == null) throw new UnexpectedNaValueException();
+		return this.self.intValue();
 	}
 }

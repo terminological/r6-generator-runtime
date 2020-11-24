@@ -76,4 +76,5 @@ public class RLogicalVector extends RVector<RLogical> implements JNIPrimitive {
 	public static RLogicalVector empty() {
 		return new RLogicalVector();
 	}
+	public void fillNA(int length) {this.fill(RLogical.NA, length);}
 }

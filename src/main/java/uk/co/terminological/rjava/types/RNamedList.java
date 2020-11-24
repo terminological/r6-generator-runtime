@@ -144,6 +144,7 @@ public class RNamedList extends LinkedHashMap<String, RObject> implements RColle
 		if (node instanceof RVector) return ((RVector<?>) node).stream().map(x -> (RPrimitive) x);
 		if (node instanceof RList) return ((RList) node).stream();
 		if (node instanceof RNamedList) return Stream.of((RNamedList) node);
+		if (node instanceof RArray) return ((RArray<?>) node).stream();
 		return Stream.empty();
 	}
 	
@@ -209,5 +210,9 @@ public class RNamedList extends LinkedHashMap<String, RObject> implements RColle
 		} catch (ClassCastException e) {
 			throw new IncompatibleTypeException("Expected a "+type.getSimpleName()+" and found a "+this.get(string).getClass().getSimpleName());
 		}
+	}
+	
+	public String toString() {
+		return "<rnamedlist>{\n"+this.entrySet().stream().map(kv -> kv.getKey()+": "+kv.getValue() ).collect(Collectors.joining(",\n"))+"\n}";
 	}
 }

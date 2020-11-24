@@ -2,6 +2,7 @@ package uk.co.terminological.rjava.types;
 
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -37,6 +38,9 @@ public class RNumericVector extends RVector<RNumeric> implements JNIPrimitive {
 	}
 	public RNumericVector() {super();}
 	public RNumericVector(int length) {super(length);}
+	public RNumericVector(List<RNumeric> subList) {
+		super(subList);
+	}
 	public double[] rPrimitive() {
 		return this.stream().mapToDouble(ri -> ri.rPrimitive()).toArray();
 	}
@@ -72,4 +76,9 @@ public class RNumericVector extends RVector<RNumeric> implements JNIPrimitive {
 	public static RNumericVector empty() {
 		return new RNumericVector();
 	}
+	public void fillNA(int length) {this.fill(RNumeric.NA, length);}
+	
+	public double[] javaPrimitive(double naValue) {
+		return this.stream().mapToDouble(ri -> ri.javaPrimitive(naValue)).toArray();
+	} 
 }

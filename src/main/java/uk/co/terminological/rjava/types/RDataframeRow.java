@@ -1,10 +1,10 @@
 package uk.co.terminological.rjava.types;
 
-import java.util.Iterator;
+import java.util.stream.Collectors;
 
 import uk.co.terminological.rjava.RObjectVisitor;
 
-public class RDataframeRow extends RNamedPrimitives implements RCollection<RNamed<RPrimitive>> {
+public class RDataframeRow extends RNamedPrimitives implements RObject {
 
 	
 	private int row;
@@ -36,26 +36,10 @@ public class RDataframeRow extends RNamedPrimitives implements RCollection<RName
 	@Override
 	public <X> X accept(RObjectVisitor<X> visitor) {
 		X out = visitor.visit(this);
-		this.iterator().forEachRemaining(c -> c.accept(visitor));
+		this.iterator().forEachRemaining(c -> RNamed.from(c).accept(visitor));
 		return out;
 	}
-	@Override
-	public Iterator<RNamed<RPrimitive>> iterator() {
-		return new Iterator<RNamed<RPrimitive>>() {
-			Iterator<Entry<String, RPrimitive>> it = RDataframeRow.this.entrySet().iterator();
-			
-			@Override
-			public boolean hasNext() {
-				return it.hasNext();
-			}
-
-			@Override
-			public RNamed<RPrimitive> next() {
-				return new RNamed<RPrimitive>(it.next());
-			}
-		
-		};
-	}
+	
 	
 	@Override
 	public int hashCode() {
@@ -68,8 +52,11 @@ public class RDataframeRow extends RNamedPrimitives implements RCollection<RName
 	}
 	public RNamedPrimitives rowGroup() {
 		RNamedPrimitives out = new RNamedPrimitives();
-		this.stream().filter(s -> dataframe.groupSet().contains(s.getKey())).forEach(np -> out.put(np.getKey(), np.getValue()));
+		dataframe.groupSet().forEach(k -> out.put(k, this.get(k)));
 		return out;
+	}
+	public String asCsv() {
+		return this.values().stream().map(v -> v.asCsv()).collect(Collectors.joining(","))+"\n";
 	}
 	
 }

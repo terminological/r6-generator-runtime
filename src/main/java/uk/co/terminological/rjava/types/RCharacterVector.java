@@ -74,5 +74,6 @@ public class RCharacterVector extends RVector<RCharacter> implements JNIPrimitiv
 		return new RCharacterVector();
 	}
 	
+	public void fillNA(int length) {this.fill(RCharacter.NA, length);}
 	
 }

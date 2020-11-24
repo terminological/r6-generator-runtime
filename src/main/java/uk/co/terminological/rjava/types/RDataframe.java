@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -33,6 +35,10 @@ import uk.co.terminological.rjava.UnconvertableTypeException;
 /**
  * A java equivalent of the R Dataframe organised in column format. This method has various accessors for iterating
  * over or streaming the contents
+ * @author terminological
+ *
+ */
+/**
  * @author terminological
  *
  */
@@ -115,7 +121,8 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 
 	public int nrow() {
 		if (this.size()==0) return 0;
-		return this.values().iterator().next().size();
+		String key = this.keySet().iterator().next();
+		return this.get(key).size();
 	}
 	
 	public int ncol() {
@@ -140,7 +147,7 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 	
 	private <X extends RPrimitive> void ensureColumnExists(String name, Class<X> type) {
 		if (!this.containsKey(name)) {
-			this.put(name, RVector.padded(nrow(), type));
+			this.put(name, RVector.ofNA(type, nrow()));
 		}
 	}
 	
@@ -155,7 +162,7 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 			} else {
 				try {
 					RPrimitive prim = RConverter.convertObjectToPrimitive(v);
-					this.put(k, RVector.padded(nrow(), prim));
+					this.put(k, RVector.padded(prim, nrow()));
 				} catch (UnconvertableTypeException e) {
 					throw new IncompatibleTypeException("Unsupported type in column: "+k,e);
 				} 
@@ -169,7 +176,7 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 			if(this.containsKey(k)) {
 				this.get(k).addUnsafe(v);
 			} else {
-				this.put(k, RVector.padded(nrow(), v));
+				this.put(k, RVector.padded(v, nrow()));
 			}
 		});
 	}
@@ -203,7 +210,7 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 		if (rows==0)
 			col = RVector.singleton(v);
 		else 
-			col = RVector.padded(rows, v);
+			col = RVector.rep(v, rows);
 		this.addCol(k, col);
 	}
 	
@@ -217,6 +224,50 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 		return this;
 	}
 	
+	public RDataframe withColIfAbsent(String s, RVector<?> col) {
+		if (!this.containsKey(s))
+			this.addCol(s, col);
+		return this;
+	}
+	
+	public <X extends RPrimitive> RDataframe withColIfAbsent(String s, X col) {
+		if (!this.containsKey(s))
+			this.addCol(s, col);
+		return this;
+	}
+	
+	public <X extends RPrimitive> RDataframe mergeWithCol(String s, X col, BiFunction<X,X,X> mergeOperation) {
+		if (!this.containsKey(s))
+			this.addCol(s, col);
+		else {
+			mergeWithCol(s, RVector.rep(col, this.nrow()), mergeOperation);
+		}
+		return this;
+	}
+	
+	public <X extends RPrimitive> RDataframe mergeWithCol(String s, RVector<X> col, BiFunction<X,X,X> mergeOperation) {
+		if (!this.containsKey(s))
+			this.addCol(s, col);
+		else {
+			if (!this.getVectorTypeOfColumn(s).equals(col.getClass())) {
+				throw new IncompatibleTypeException(
+					"Tried to merge column "+s+" with a column of "+col.getType().getSimpleName()+" but it is a "+this.getVectorTypeOfColumn(s).getSimpleName());
+			} else if (col.size() != this.nrow()) {
+				throw new IncompatibleTypeException(
+						"Tried to merge column "+s+" with a length of "+col.size()+" but daatframe had length "+this.nrow());
+			} else {
+				RVector<?> source = this.get(s);
+				for (int i=0;i<col.size();i++) {
+					@SuppressWarnings("unchecked")
+					X value = mergeOperation.apply((X) source.get(i), col.get(i));
+					col.set(i, value);
+				}
+				this.replace(s, col);
+			}
+		}
+		return this;
+	}
+	
 	public RVector<?> getCol(String name) {
 		return this.get(name);
 	}
@@ -226,10 +277,10 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 		int appendNrow = rows.nrow();
 		this.keySet().forEach(k -> {
 			if (rows.containsKey(k)) {
-				this.get(k).addUnsafe(rows.get(k));
+				this.get(k).addAllUnsafe(rows.get(k));
 			} else {
-				RVector<?> toPad = RVector.padded(appendNrow, this.getTypeOfColumn(k));
-				this.get(k).addUnsafe(toPad);
+				//Columns that are not in dataframe to be bound need to have NAs added
+				this.get(k).fillNA(appendNrow);
 			}
 		});
 	}
@@ -332,12 +383,13 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 	
 	@Override
 	public Iterator<RDataframeRow> iterator() {
+		int nrow = nrow();
 		return new Iterator<RDataframeRow>() {
 			int i=0;
 
 			@Override
 			public boolean hasNext() {
-				return i<nrow();
+				return i<nrow;
 			}
 
 			@Override
@@ -423,6 +475,32 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 		return out;
 	}
 	
+	/**
+	 *  Filter a dataframe and return a new dataframe containing entrie that pass predicate
+	 * @param name - the column to test
+	 * @param type - the type of the column (for type hinting)
+	 * @param predicate - a test of the individual contents of the column
+	 * @return A new dataframe
+	 */
+	public <Y extends RPrimitive> RDataframe filter(String name, Class<Y> type, Predicate<Y> predicate) {
+		return filter(RNamedPredicate.from(name, type, predicate));
+	}
+	
+	/**
+	 *  Filter a dataframe and return a new dataframe containing entrie that pass predicate
+	 * @param name - the column to test
+	 * @param predicate - a test of the individual contents of the column
+	 * @return A new dataframe
+	 */
+	public <Y extends RPrimitive> RDataframe filter(String name, Predicate<Y> predicate) {
+		return filter(RNamedPredicate.from(name, predicate));
+	}
+	
+	/**
+	 * Filter a dataframe and return a new dataframe
+	 * @param tests A set of tests
+	 * @return a new dataframe containing only items which pass all the filter test
+	 */
 	public RDataframe filter(RNamedPredicate<?>... tests) {
 		
 		// return everything if no conditions
@@ -474,6 +552,7 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 	}
 
 	public RDataframe rename(String to, String from) {
+		if (from.equals(to)) return this;
 		RDataframe out = new RDataframe(this);
 		out.addCol(to, out.get(from));
 		out.remove(from);
@@ -486,5 +565,57 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 		return out;
 	}
 	
+	public RDataframe count() {
+		return this.groupModify((d,g) -> 
+			RDataframe.create().withCol("n", 
+					RVector.with(
+							d.nrow()
+						)
+					)
+		);
+	}
+	
+	public String asCsv() {
+		StringBuilder out = new StringBuilder();
+		out.append(
+				this.keySet().stream().map(s -> "\""+s+"\"").collect(Collectors.joining(","))+"\n"
+				);
+		this.stream().map(row -> row.asCsv()).forEach(out::append);
+		return out.toString();
+	}
+
+	
+	/**
+	 * Returns the same data frame with the column "columnName" 
+	 * @param columnName -  the name of the column to mutate
+	 * @param inputType - the type of the original column
+	 * @param mapping - the operation to apply to the column (must result in an RPrimitive of some type)
+	 * @return the same dataframe with a changed column
+	 */
+	public <X extends RPrimitive,Y extends RPrimitive> RDataframe mutate(String columnName, Class<X> inputType, Function<X,Y> mapping) {
+		return mutate(columnName,mapping);
+	}
+	
+	
+	/**
+	 * Returns the same data frame with the column "columnName" 
+	 * @param columnName -  the name of the column to mutate
+	 * @param mapping - the operation to apply to the column (must result in an RPrimitive of some type)
+	 * @return the same dataframe with a changed column
+	 */
+	@SuppressWarnings("unchecked")
+	public <X extends RPrimitive,Y extends RPrimitive> RDataframe mutate(String columnName, Function<X,Y> mapping) {
+		try {
+			RVector<X> tmp = (RVector<X>) this.get(columnName);
+			List<Y> tmp2 = tmp.stream().map(mapping).collect(Collectors.toList());
+			RVector<Y> tmp3 = (RVector<Y>) RVector.empty(tmp2.get(0).getClass());
+			tmp2.forEach(tmp3::add);
+			this.replace(columnName, tmp3);
+		} catch (ClassCastException e) {
+			throw new IncompatibleTypeException("The column type is not compatible with the function class");
+		}
+		return this;
+	}
+
 	
 }

@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -21,7 +22,7 @@ public abstract class RVector<X extends RPrimitive> extends ArrayList<X> impleme
 
 	private static final long serialVersionUID = RObject.datatypeVersion;
 	private static Logger log = LoggerFactory.getLogger(RVector.class);
-	private static int INITIAL_SIZE = 100;
+	private static int INITIAL_SIZE = 10;
 	
 	public RVector() {
 		super();
@@ -31,33 +32,24 @@ public abstract class RVector<X extends RPrimitive> extends ArrayList<X> impleme
 		super(length);
 	}
 	
-	public static <Y extends RPrimitive> RVector<Y> pad(Class<Y> type, int length) {
-		return rep(RPrimitive.na(type),length);
-	}
-	
-	public static <Y extends RPrimitive> RVector<Y> rep(Y x, int length) {
-		RVector<Y> out = RVector.create(x.getClass(), INITIAL_SIZE);
-		for (int i=0; i<length; i++) {
-			out.add(x);
-		}
-		return out;
-	}
-	
-	@SuppressWarnings("unchecked")
-	private static <Y extends RPrimitive> RVector<Y> create(Class<? extends RPrimitive> clazz, int length) {
-		if (RCharacter.class.equals(clazz)) return (RVector<Y>) new RCharacterVector(length); 
-		if (RInteger.class.equals(clazz)) return (RVector<Y>) new RIntegerVector(length);
-		if (RNumeric.class.equals(clazz)) return (RVector<Y>) new RNumericVector(length);
-		if (RFactor.class.equals(clazz)) return (RVector<Y>) new RFactorVector(length);
-		if (RLogical.class.equals(clazz)) return (RVector<Y>) new RLogicalVector(length);
-		if (RDate.class.equals(clazz)) return (RVector<Y>) new RDateVector(length);
-		throw new IncompatibleTypeException("No vector defined for: "+clazz.getCanonicalName());
+	public RVector(List<X> subList) {
+		super(subList);
 	}
 
-	public abstract Class<X> getType();
+	@SuppressWarnings("unchecked")
+	public static <Y extends RPrimitive> RVector<Y> ofNA(Class<Y> clazz, int length) {
+		if (RCharacter.class.equals(clazz)) return (RVector<Y>) new RCharacterVector(length+INITIAL_SIZE).fill(RCharacter.NA, length); 
+		if (RInteger.class.equals(clazz)) return (RVector<Y>) new RIntegerVector(length+INITIAL_SIZE).fill(RInteger.NA, length);
+		if (RNumeric.class.equals(clazz)) return (RVector<Y>) new RNumericVector(length+INITIAL_SIZE).fill(RNumeric.NA, length);
+		if (RFactor.class.equals(clazz)) return (RVector<Y>) new RFactorVector(length+INITIAL_SIZE).fill(RFactor.NA, length);
+		if (RLogical.class.equals(clazz)) return (RVector<Y>) new RLogicalVector(length+INITIAL_SIZE).fill(RLogical.NA, length);
+		if (RDate.class.equals(clazz)) return (RVector<Y>) new RDateVector(length+INITIAL_SIZE).fill(RDate.NA, length);
+		throw new IncompatibleTypeException("No vector defined for: "+clazz.getCanonicalName());
+		
+	}
 	
 	@SuppressWarnings("unchecked")
-	public static <Y extends RPrimitive> RVector<Y> create(Class<Y> clazz) {
+	public static <Y extends RPrimitive> RVector<Y> empty(Class<Y> clazz) {
 		if (RCharacter.class.equals(clazz)) return (RVector<Y>) new RCharacterVector(INITIAL_SIZE); 
 		if (RInteger.class.equals(clazz)) return (RVector<Y>) new RIntegerVector(INITIAL_SIZE);
 		if (RNumeric.class.equals(clazz)) return (RVector<Y>) new RNumericVector(INITIAL_SIZE);
@@ -67,13 +59,46 @@ public abstract class RVector<X extends RPrimitive> extends ArrayList<X> impleme
 		throw new IncompatibleTypeException("No vector defined for: "+clazz.getCanonicalName());
 	}
 	
+	public static RCharacterVector rep(RCharacter primitive, int length) {return (RCharacterVector) new RCharacterVector(length+INITIAL_SIZE).fill(primitive, length);}
+	public static RNumericVector rep(RNumeric primitive, int length) {return (RNumericVector) new RNumericVector(length+INITIAL_SIZE).fill(primitive, length);}
+	public static RIntegerVector rep(RInteger primitive, int length) {return (RIntegerVector) new RIntegerVector(length+INITIAL_SIZE).fill(primitive, length);}
+	public static RFactorVector rep(RFactor primitive, int length) {return (RFactorVector) new RFactorVector(length+INITIAL_SIZE).fill(primitive, length);}
+	public static RLogicalVector rep(RLogical primitive, int length) {return (RLogicalVector) new RLogicalVector(length+INITIAL_SIZE).fill(primitive, length);}
+	public static RDateVector rep(RDate primitive, int length) {return (RDateVector) new RDateVector(length+INITIAL_SIZE).fill(primitive, length);}
+	
+	@SuppressWarnings("unchecked")
+	public static <Y extends RPrimitive> RVector<Y> rep(Y v, int rows) {
+		if (v instanceof RCharacter) return (RVector<Y>) rep((RCharacter) v, rows);
+		if (v instanceof RNumeric) return (RVector<Y>) rep((RNumeric) v, rows);
+		if (v instanceof RInteger) return (RVector<Y>) rep((RInteger) v, rows);
+		if (v instanceof RFactor) return (RVector<Y>) rep((RFactor) v, rows);
+		if (v instanceof RLogical) return (RVector<Y>) rep((RLogical) v, rows);
+		if (v instanceof RDate) return (RVector<Y>) rep((RDate) v, rows);
+		throw new IncompatibleTypeException("No vector defined for: "+v.getClass().getCanonicalName());
+	}
+	
+//	@SuppressWarnings("unchecked")
+//	private static <Y extends RPrimitive> RVector<Y> create(Class<? extends RPrimitive> clazz, int length) {
+//		if (RCharacter.class.equals(clazz)) return (RVector<Y>) new RCharacterVector(length); 
+//		if (RInteger.class.equals(clazz)) return (RVector<Y>) new RIntegerVector(length);
+//		if (RNumeric.class.equals(clazz)) return (RVector<Y>) new RNumericVector(length);
+//		if (RFactor.class.equals(clazz)) return (RVector<Y>) new RFactorVector(length);
+//		if (RLogical.class.equals(clazz)) return (RVector<Y>) new RLogicalVector(length);
+//		if (RDate.class.equals(clazz)) return (RVector<Y>) new RDateVector(length);
+//		throw new IncompatibleTypeException("No vector defined for: "+clazz.getCanonicalName());
+//	}
+
+	
+	
+	
+	
 	
 	public static RCharacterVector singleton(RCharacter primitive) {return new RCharacterVector(INITIAL_SIZE).and(primitive);}
 	public static RNumericVector singleton(RNumeric primitive) {return new RNumericVector(INITIAL_SIZE).and(primitive);}
 	public static RIntegerVector singleton(RInteger primitive) {return new RIntegerVector(INITIAL_SIZE).and(primitive);}
 	public static RFactorVector singleton(RFactor primitive) {return new RFactorVector(INITIAL_SIZE).and(primitive);}
 	public static RLogicalVector singleton(RLogical primitive) {return new RLogicalVector(INITIAL_SIZE).and(primitive);}
-	public static RDateVector singleton(RDate primitive) {return new RDateVector(100).and(primitive);}
+	public static RDateVector singleton(RDate primitive) {return new RDateVector(INITIAL_SIZE).and(primitive);}
 	
 	@SuppressWarnings("unchecked")
 	public static <Y extends RPrimitive> RVector<Y> singleton(Y v) {
@@ -86,40 +111,43 @@ public abstract class RVector<X extends RPrimitive> extends ArrayList<X> impleme
 		throw new IncompatibleTypeException("No vector defined for: "+v.getClass().getCanonicalName());
 	}
 	
-	public static RCharacterVector padded(int length, RCharacter primitive) { return RVector.pad(RCharacter.class,length-1).and(primitive);}
-	public static RNumericVector padded(int length, RNumeric primitive) { return RVector.pad(RNumeric.class,length-1).and(primitive);}
-	public static RIntegerVector padded(int length, RInteger primitive) { return RVector.pad(RInteger.class,length-1).and(primitive);}
-	public static RFactorVector padded(int length, RFactor primitive) { return RVector.pad(RFactor.class,length-1).and(primitive);}
-	public static RLogicalVector padded(int length, RLogical primitive) { return RVector.pad(RLogical.class,length-1).and(primitive);}
-	public static RDateVector padded(int length, RDate primitive) { return RVector.pad(RDate.class,length-1).and(primitive);}
+	public static RCharacterVector padded(RCharacter primitive, int length) { return RVector.rep(RCharacter.NA,length-1).and(primitive);}
+	public static RNumericVector padded(RNumeric primitive, int length) { return RVector.rep(RNumeric.NA,length-1).and(primitive);}
+	public static RIntegerVector padded(RInteger primitive, int length) { return RVector.rep(RInteger.NA,length-1).and(primitive);}
+	public static RFactorVector padded(RFactor primitive, int length) { return RVector.rep(RFactor.NA,length-1).and(primitive);}
+	public static RLogicalVector padded(RLogical primitive, int length) { return RVector.rep(RLogical.NA,length-1).and(primitive);}
+	public static RDateVector padded(RDate primitive, int length) { return RVector.rep(RDate.NA,length-1).and(primitive);}
 	
 	@SuppressWarnings("unchecked")
-	public static <Y extends RPrimitive> RVector<Y> padded(int length, Y v) {
-		if (v instanceof RCharacter) return (RVector<Y>) padded(length,(RCharacter) v);
-		if (v instanceof RNumeric) return (RVector<Y>) padded(length,(RNumeric) v);
-		if (v instanceof RInteger) return (RVector<Y>) padded(length,(RInteger) v);
-		if (v instanceof RFactor) return (RVector<Y>) padded(length,(RFactor) v);
-		if (v instanceof RLogical) return (RVector<Y>) padded(length,(RLogical) v);
-		if (v instanceof RDate) return (RVector<Y>) padded(length,(RDate) v);
+	public static <Y extends RPrimitive> RVector<Y> padded(Y v, int length) {
+		if (v instanceof RCharacter) return (RVector<Y>) padded((RCharacter) v,length);
+		if (v instanceof RNumeric) return (RVector<Y>) padded((RNumeric) v,length);
+		if (v instanceof RInteger) return (RVector<Y>) padded((RInteger) v,length);
+		if (v instanceof RFactor) return (RVector<Y>) padded((RFactor) v,length);
+		if (v instanceof RLogical) return (RVector<Y>) padded((RLogical) v,length);
+		if (v instanceof RDate) return (RVector<Y>) padded((RDate) v,length);
 		throw new IncompatibleTypeException("No vector defined for: "+v.getClass().getCanonicalName());
 	}
-		
-	public static <Y extends RPrimitive> RVector<Y> padded(int length, Class<Y> clazz) {
-		return rep(RPrimitive.na(clazz),length);
-	}
-
-	public void addAll(RVector<X> r1) {
-		super.addAll(r1);
+	
+	public RVector<X> fill(X x, int length) {
+		for (int i=0; i<length; i++) {
+			this.add(x);
+		}
+		return this;
 	}
 	
-	public boolean add(X r1) {
-		return super.add(r1);
-	}
+//	public boolean addAll(RVector<X> r1) {
+//		return super.addAll(r1);
+//	}
+//	
+//	public boolean add(X r1) {
+//		return super.add(r1);
+//	}
 
 	public String toString() {
-		return "<"+this.getType().getSimpleName().toLowerCase()+"> "+
+		return "<"+this.getType().getSimpleName().toLowerCase()+"["+this.size()+"]>{"+
 				this.stream().limit(10).map(v-> (v == null? "NULL": v.toString()))
-						.collect(Collectors.joining(", "))+", ...";
+						.collect(Collectors.joining(", "))+", ...}";
 	}
 	
 	public String rCode() {
@@ -140,6 +168,8 @@ public abstract class RVector<X extends RPrimitive> extends ArrayList<X> impleme
 	public static RFactorVector with(Enum<?>... o) {return RConverter.convert(o);}
 	
 	
+	public abstract Class<X> getType();
+	
 	public abstract <Y extends RVector<X>> Y and(@SuppressWarnings("unchecked") X... o);
 	
 	public Set<X> distinct() {
@@ -147,7 +177,6 @@ public abstract class RVector<X extends RPrimitive> extends ArrayList<X> impleme
 	}
 	
 	public BitSet matches(RPrimitive value) {
-		//TODO: optimise here.
 		BitSet out = new BitSet(this.size());
 		for (int i=0;i<this.size();i++) {
 			out.set(i,value.equals(this.get(i)));
@@ -163,14 +192,14 @@ public abstract class RVector<X extends RPrimitive> extends ArrayList<X> impleme
 				out.set(i,((Predicate<X>) criteria).test(this.get(i)));
 			}
 		} catch (Exception e) {
-			log.debug("Vector filter did not complete correctly: "+criteria.toString());
+			log.debug("Vector filter did not complete correctly, assuming no match: "+criteria.toString());
 		}
 		return out;
 	}
 	
 	public RVector<X> subset(BitSet filter) {
-		if(filter.length() > this.size()) throw new IndexOutOfBoundsException("filter length greater than vector lenth");
-		RVector<X> out = RVector.create(this.getType());
+		if(filter.length() > this.size()) throw new IndexOutOfBoundsException("Filter length greater than vector length");
+		RVector<X> out = RVector.empty(this.getType());
 		for (int i = 0; i<this.size(); i++) {
 			if (filter.get(i)) {
 				out.add(this.get(i));
@@ -192,22 +221,26 @@ public abstract class RVector<X extends RPrimitive> extends ArrayList<X> impleme
 	public abstract <Y extends Object> Stream<Optional<Y>> opt();
 
 	@SuppressWarnings("unchecked")
-	public void addUnsafe(RVector<? extends RPrimitive> rVector) throws IncompatibleTypeException {
+	protected void addAllUnsafe(RVector<? extends RPrimitive> rVector) {
 		try {
 			this.addAll((RVector<X>) rVector);
 		} catch (ClassCastException e) {
-			throw new IncompatibleTypeException("tried to append a "+rVector.getClass().getSimpleName()+" to a "+this.getClass().getSimpleName());
+			throw new IncompatibleTypeException("Tried to append a "+rVector.getClass().getSimpleName()+" to a "+this.getClass().getSimpleName());
 		}
 	}
 
 	@SuppressWarnings("unchecked")
-	public void addUnsafe(RPrimitive v) {
+	protected void addUnsafe(RPrimitive v) {
 		try {
 			this.add((X) v);
 		} catch (ClassCastException e) {
-			throw new IncompatibleTypeException("tried to append a "+v.getClass().getSimpleName()+" to a "+this.getClass().getSimpleName());
+			throw new IncompatibleTypeException("Tried to append a "+v.getClass().getSimpleName()+" to a "+this.getClass().getSimpleName());
 		}
 	}
+
+	public abstract void fillNA(int appendNrow);
+
+	
 
 	
 	
