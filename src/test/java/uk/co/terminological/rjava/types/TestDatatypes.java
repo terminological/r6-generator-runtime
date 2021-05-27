@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -40,6 +41,27 @@ class TestDatatypes {
 	}
 
 	public static enum TestEnum {ONE,TWO,THREE}
+	
+	
+	@Test void testDateBehaviour() {
+//		DateTimeFormatter rparser = DateTimeFormatter.ofPattern("yyy-MM-dd G");
+//		System.out.println(LocalDate.parse("234-01-01 BC",rparser));
+//		
+		System.out.println(new RDate("1066-01-01"));
+		System.out.println(new RDate("234-01-01"));
+//		DateTimeFormatter rparser = DateTimeFormatter.ofPattern("yyy-MM-dd G");
+//		value = 
+//		if (value.startsWith("-")) {
+//			value = value.substring(1)+" BC";
+//		} else {
+//			value = value.substring(1)+" AD";
+//		}
+//		self = LocalDate.parse(value,rparser);
+//	}
+		
+		System.out.println(new RDate("-234-01-01"));
+		
+	}
 	
 	@Test
 	final void testNaBehaviour() {

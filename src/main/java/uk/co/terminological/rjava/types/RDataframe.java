@@ -84,6 +84,7 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 	//However it would need to keep up to date with the underlying data structure.
 	//Questionable whether it should be part of serialisation... Maybe it should...
 	//transient Map<RNamedPrimitives,RDataframe> groupData = new HashMap<RNamedPrimitives,RDataframe>();
+	//The answer I think is to map this directly from R into an in memory H2 database table (indexed on grouping structures).
 	
 	public RDataframe() {
 		super();
@@ -532,8 +533,9 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 			RDataframe subgroup = group.getValue().ungroup().drop(this.getGroups());
 			RNamedPrimitives grouping = group.getKey();
 			RDataframe subgroupOut = func.apply(subgroup, grouping);
-			grouping.forEach((k,v) -> subgroupOut.addCol(k, v));
-			return subgroupOut;
+			RDataframe groupOut = grouping.toDataframe(subgroupOut.nrow());
+			subgroupOut.forEach((k,v) -> groupOut.addCol(k, v));
+			return groupOut;
 		}).forEach(out::bindRows);
 		
 		out.groupBy(this.getGroups());
@@ -541,6 +543,8 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 	}
 
 	
+	
+
 	public <Y extends RVector<?>> Y pull(String col,Class<Y> vectorClass) {
 		if (!this.containsKey(col)) throw new NameNotFoundException(col);
 		return this.get(col).as(vectorClass);

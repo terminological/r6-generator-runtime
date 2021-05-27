@@ -22,8 +22,9 @@ import uk.co.terminological.rjava.RObjectVisitor;
 		RtoJava = { 
 				"function(rObj) {", 
 				"	if (is.null(rObj)) return(rJava::.new('~RDATEVECTOR~'))",
+				"   if (any(rObj<'0001-01-01')) message('negative dates will be converted to NA')",
 				//"	if (!is.integer(rObj)) stop('expected an integer')",
-				"	tmp = as.character(rObj)",
+				"	tmp = as.character(rObj,format='%Y-%m-%d')",
 				"	return(rJava::.jnew('~RDATEVECTOR~',rJava::.jarray(tmp)))", 
 				"}"
 		}
@@ -50,7 +51,7 @@ public class RDateVector extends RVector<RDate> implements JNIPrimitive {
 	}
 	
 	public String rCode() {
-		return "as.Date(c("+this.stream().map(s -> s.isNa() ? "NA" : ("'"+s.toString()+"'")).collect(Collectors.joining(", "))+"),'%Y-%m-%d')";
+		return "as.Date(c("+this.stream().map(s -> s.isNa() ? "NA" : ("'"+s.rPrimitive()+"'")).collect(Collectors.joining(", "))+"),'%Y-%m-%d')";
 	}
 	
 	@Override

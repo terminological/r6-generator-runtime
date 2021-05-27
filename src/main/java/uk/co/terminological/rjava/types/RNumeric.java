@@ -52,6 +52,10 @@ public class RNumeric implements RPrimitive, JNIPrimitive  {
 		return self;
 	}
 	
+	public double getOrNaN() {
+		return self == null ? NA_VALUE : self;
+	}
+	
 	public RNumeric(Double value) {
 		if (Double.doubleToRawLongBits(value.doubleValue()) == NA_VALUE_LONG) self = null;
 		else self = (Double) value;

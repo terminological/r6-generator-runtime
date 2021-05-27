@@ -20,8 +20,9 @@ import uk.co.terminological.rjava.RObjectVisitor;
 				"function(rObj) {", 
 				"	if (is.na(rObj)) return(rJava::.jnew('~RDATE~'))",
 				"	if (length(rObj) > 1) stop('input too long')",
+				"   if (rObj<'0001-01-01') message('negative dates will be converted to NA')",
 				//"	if (!is.numeric(rObj)) stop('expected a numeric')",
-				"	tmp = as.character(rObj)[[1]]",
+				"	tmp = as.character(rObj,format='%Y-%m-%d')[[1]]",
 				"	return(rJava::.jnew('~RDATE~',tmp))", 
 				"}"
 		}
@@ -36,7 +37,8 @@ public class RDate implements RPrimitive, JNIPrimitive  {
 	
 	LocalDate self;
 	
-	static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+	static DateTimeFormatter isoformatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+	static DateTimeFormatter rformatter = DateTimeFormatter.ofPattern("yyy-MM-dd");
 		
 	@SuppressWarnings("unchecked")
 	public LocalDate get() {
@@ -45,7 +47,13 @@ public class RDate implements RPrimitive, JNIPrimitive  {
 	
 	public RDate(String value) {
 		if (value == null) self=null;
-		else self = LocalDate.parse(value);
+		else {
+			if (value.startsWith("-")) {
+				self = null;
+			} else {
+				self = LocalDate.parse(value,rformatter);
+			}
+		}
 	}
 	
 	public RDate() {
@@ -85,7 +93,7 @@ public class RDate implements RPrimitive, JNIPrimitive  {
 		return true;
 	}
 	
-	public String rPrimitive() {return self == null ? "NA" : self.format(formatter);} 
+	public String rPrimitive() {return self == null ? "NA" : self.format(rformatter);} 
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -103,11 +111,11 @@ public class RDate implements RPrimitive, JNIPrimitive  {
 		throw new ClassCastException("Can't convert to a "+type.getCanonicalName());
 	}
 	
-	public String toString() {return self==null ? "NA" : self.format(formatter);}
+	public String toString() {return self==null ? "NA" : self.format(isoformatter);}
 	
 	@Override
 	public String rCode() {
-		return this.isNa() ? "NA": "as.Date('"+self.format(formatter)+"','%Y-%m-%d')";
+		return this.isNa() ? "NA": "as.Date('"+self.format(rformatter)+"','%Y-%m-%d')";
 	}
 	
 	@Override
