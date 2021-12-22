@@ -11,6 +11,7 @@ import static uk.co.terminological.rjava.MapRule.*;
 import uk.co.terminological.rjava.IncompatibleTypeException;
 import uk.co.terminological.rjava.NameNotFoundException;
 import uk.co.terminological.rjava.RConverter;
+import uk.co.terminological.rjava.RFunctions;
 import uk.co.terminological.rjava.RName;
 // CE01
 import uk.co.terminological.rjava.UnconvertableTypeException;
@@ -287,6 +288,12 @@ class TestDatatypes {
 		assertThrows(NameNotFoundException.class, () -> testData().pull("unknown", RNumericVector.class));
 		assertThrows(NameNotFoundException.class, () -> testData().pull("unknown", RIntegerVector.class));
 		assertThrows(IncompatibleTypeException.class, () -> testData().pull("value", RIntegerVector.class));
+	}
+	
+	@Test void testRFunctions() {
+		assertTrue(!RFunctions.any(RFunctions::isNa, testNumeric()));
+		assertTrue(RFunctions.all(RFunctions::isFinite, testNumeric()));
+		
 	}
 	
 	@Test void testSelectAndDrop() {

@@ -1,7 +1,5 @@
 package uk.co.terminological.rjava.types;
 
-import java.util.Arrays;
-
 import uk.co.terminological.rjava.RConverter;
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
@@ -33,7 +31,7 @@ public class RFactor implements RPrimitive {
 	private static final long serialVersionUID = RObject.datatypeVersion;
 	
 	Integer self;
-	char[] label;
+	String label;
 	
 	static final int NA_VALUE = Integer.MIN_VALUE;
 	static final String NA_LABEL = "NA";
@@ -50,10 +48,10 @@ public class RFactor implements RPrimitive {
 	public RFactor(int value, String label) {
 		if ((int) value == NA_VALUE) {
 			this.self = null;
-			this.label = NA_LABEL.toCharArray();
+			this.label = NA_LABEL;
 		} else {
 			this.self = Integer.valueOf((int) value);
-			this.label = label.toCharArray();
+			this.label = label;
 		}
 	}
 	
@@ -67,7 +65,7 @@ public class RFactor implements RPrimitive {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + Arrays.hashCode(label);
+		result = prime * result + label.hashCode();
 		result = prime * result + ((self == null) ? 0 : self.hashCode());
 		return result;
 	}
@@ -86,10 +84,10 @@ public class RFactor implements RPrimitive {
 				return false;
 		} else if (!self.equals(other.self))
 			return false;
-		return Arrays.equals(label, other.label);
+		return label.equals(other.label);
 	}
 	
-	public String rLabel() {return label.toString();}
+	public String rLabel() {return label;}
 
 	public int rValue() {
 		return self == null ? NA_VALUE : self.intValue();
@@ -106,7 +104,7 @@ public class RFactor implements RPrimitive {
 	}
 	
 	
-	public String toString() {return self==null? NA_LABEL : String.valueOf(label);}
+	public String toString() {return self==null? NA_LABEL : label;}
 	
 	public String rCode() {
 		if (this.isNa()) return "NA";

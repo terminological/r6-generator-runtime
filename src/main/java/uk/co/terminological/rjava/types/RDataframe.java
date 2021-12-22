@@ -175,7 +175,8 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 	public synchronized void addRow(RNamedPrimitives row) {
 		row.forEach((k,v) -> {
 			if(this.containsKey(k)) {
-				this.get(k).addUnsafe(v);
+				//This is updating map in situation where adding to an untyped NA vector declares its type.
+				this.put(k, this.get(k).addUnsafe(v));
 			} else {
 				this.put(k, RVector.padded(v, nrow()));
 			}
@@ -278,7 +279,7 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 		int appendNrow = rows.nrow();
 		this.keySet().forEach(k -> {
 			if (rows.containsKey(k)) {
-				this.get(k).addAllUnsafe(rows.get(k));
+				this.put(k, this.get(k).addAllUnsafe(rows.get(k)));
 			} else {
 				//Columns that are not in dataframe to be bound need to have NAs added
 				this.get(k).fillNA(appendNrow);

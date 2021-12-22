@@ -45,6 +45,8 @@ public interface RObjectVisitor<X> {
 	public X visit(RNumeric c);
 	public X visit(RNumericVector c);
 	public X visit(RArray<?> rArray);
+	public X visit(RUntypedNa rna);
+	public X visit(RUntypedNaVector rUntypedNaVector);
 	
 	
 	/** Default visitor implemementation that returns an optional empty value for every visit.
@@ -77,6 +79,8 @@ public interface RObjectVisitor<X> {
 		public Optional<Y> visit(RNumeric c) {return Optional.empty();}
 		public Optional<Y> visit(RNumericVector c) {return Optional.empty();}
 		public Optional<Y> visit(RArray<?> c) {return Optional.empty();}
+		public Optional<Y> visit(RUntypedNa c) {return Optional.empty();}
+		public Optional<Y> visit(RUntypedNaVector c) {return Optional.empty();}
 	}
 	
 	public static class Default implements RObjectVisitor<Void> {
@@ -100,6 +104,8 @@ public interface RObjectVisitor<X> {
 		public Void visit(RNumeric c) {return null;}
 		public Void visit(RNumericVector c) {return null;}
 		public Void visit(RArray<?> c) {return null;}
+		public Void visit(RUntypedNa c) {return null;}
+		public Void visit(RUntypedNaVector c) {return null;}
 	}
 	
 	/** This abstract visitor will visit each node once and collect the result into a 
@@ -254,6 +260,20 @@ public interface RObjectVisitor<X> {
 				tmp.ifPresent(collection::add);
 				return tmp;
 			}}
+		public Optional<Y> visit(RUntypedNa c) {if (visited.contains(c)) return Optional.empty();
+		else {
+			visited.add(c);
+			Optional<Y> tmp = visitOnce(c);
+			tmp.ifPresent(collection::add);
+			return tmp;
+		}}
+		public Optional<Y> visit(RUntypedNaVector c) {if (visited.contains(c)) return Optional.empty();
+		else {
+			visited.add(c);
+			Optional<Y> tmp = visitOnce(c);
+			tmp.ifPresent(collection::add);
+			return tmp;
+		}}
 		public Optional<Y> visit(RNumeric c) {if (visited.contains(c)) return Optional.empty();
 			else {
 				visited.add(c);
@@ -296,6 +316,8 @@ public interface RObjectVisitor<X> {
 		public abstract Optional<Y> visitOnce(RNumeric c);
 		public abstract Optional<Y> visitOnce(RNumericVector c);
 		public abstract Optional<Y> visitOnce(RArray<?> c);
+		public abstract Optional<Y> visitOnce(RUntypedNa c);
+		public abstract Optional<Y> visitOnce(RUntypedNaVector c);
 	}
 	
 	public static class DefaultOnceOnly<Y> extends OnceOnly<Y> {
@@ -319,7 +341,11 @@ public interface RObjectVisitor<X> {
 		public Optional<Y> visitOnce(RNumeric c) {return Optional.empty();}
 		public Optional<Y> visitOnce(RNumericVector c) {return Optional.empty();}
 		public Optional<Y> visitOnce(RArray<?> c) {return Optional.empty();}
+		public Optional<Y> visitOnce(RUntypedNa rna) {return Optional.empty();}
+		public Optional<Y> visitOnce(RUntypedNaVector rna) {return Optional.empty();}
 	}
+
+	
 
 	
 }

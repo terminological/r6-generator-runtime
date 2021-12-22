@@ -197,7 +197,7 @@ public class RNamedList extends LinkedHashMap<String, RObject> implements RColle
 	public Map<String,Object> asMap() {
 		Map<String,Object> out = new HashMap<>();
 		this.entrySet().stream().forEach(kv -> out.put(kv.getKey(), RConverter.unconvert(kv.getValue())));
-		return null;
+		return out;
 	}
 
 	public static RNamedList create() {

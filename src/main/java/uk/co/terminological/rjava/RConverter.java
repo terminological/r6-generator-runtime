@@ -37,6 +37,7 @@ import uk.co.terminological.rjava.types.RNumeric;
 import uk.co.terminological.rjava.types.RNumericVector;
 import uk.co.terminological.rjava.types.RObject;
 import uk.co.terminological.rjava.types.RPrimitive;
+import uk.co.terminological.rjava.types.RUntypedNa;
 import uk.co.terminological.rjava.types.RVector;
 
 public class RConverter {
@@ -85,6 +86,7 @@ public class RConverter {
 		if (o instanceof Enum) return (X) convert((Enum<?>) o);
 		if (o instanceof String) return (X) convert((String) o);
 		if (o instanceof LocalDate) return (X) convert((LocalDate) o);
+		if (o == null) return (X) new RUntypedNa();
 		throw new UnconvertableTypeException("Don't know how to convert a: "+o.getClass());
 	}
 	
@@ -343,7 +345,12 @@ public class RConverter {
 							//TODO: this woudl possibly be quicker with an interim List<RVector<?>> collectors and a finisher which assembled them.
 							//Maybe wouldn't make huge difference....
 							Object tmp2 = rule.rule().apply(o);
-							tmp.put(rule.label(), RConverter.convertObjectToPrimitiveUnsafe(tmp2));
+							try {
+								tmp.put(rule.label(), RConverter.convertObjectToPrimitive(tmp2));
+							} catch (UnconvertableTypeException e) {
+								// Fall back to string 
+								tmp.put(rule.label(), RConverter.convertObjectToPrimitiveUnsafe(tmp2.toString()));
+							}
 						}
 						lhm.addRow(tmp);
 					}
@@ -401,14 +408,24 @@ public class RConverter {
 							//TODO: this woudl possibly be quicker with an interim List<RVector<?>> collectors and a finisher which assembled them.
 							//Maybe wouldn't make huge difference....
 							Object tmp2 = rule.rule().apply(o);
-							tmp.put(rule.label(), RConverter.convertObjectToPrimitiveUnsafe(tmp2));
+							try {
+								tmp.put(rule.label(), RConverter.convertObjectToPrimitive(tmp2));
+							} catch (UnconvertableTypeException e) {
+								// Fall back to string 
+								tmp.put(rule.label(), RConverter.convertObjectToPrimitiveUnsafe(tmp2.toString()));
+							}
 						}
 						Stream<W> st = streamRule.streamRule().apply(o);
 						st.forEach(w -> {
 							RNamedPrimitives tmp2 = new RNamedPrimitives(tmp);
 							for (MapRule<W> rule: streamRule.mapRules()) {
 								Object tmp3 = rule.rule().apply(w);
-								tmp2.put(rule.label(), RConverter.convertObjectToPrimitiveUnsafe(tmp3));
+								try {
+									tmp2.put(rule.label(), RConverter.convertObjectToPrimitive(tmp3));
+								} catch (UnconvertableTypeException e) {
+									// Fall back to string 
+									tmp2.put(rule.label(), RConverter.convertObjectToPrimitiveUnsafe(tmp3.toString()));
+								}
 							}
 							lhm.addRow(tmp2);
 						});

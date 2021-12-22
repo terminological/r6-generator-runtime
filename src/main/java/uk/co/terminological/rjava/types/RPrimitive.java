@@ -51,12 +51,12 @@ public interface RPrimitive extends RObject {
 	
 	public static RFactor of(Enum<?> o) {return RConverter.convert(o);}
 	
-	public static RCharacter na(RCharacter v) {return new RCharacter();}
-	public static RInteger na(RInteger v) {return new RInteger();}
-	public static RNumeric na(RNumeric v) {return new RNumeric();}
-	public static RFactor na(RFactor v) {return new RFactor();}
-	public static RLogical na(RLogical v) {return new RLogical();}
-	public static RDate na(RDate v) {return new RDate();}
+//	public static RCharacter na(RCharacter v) {return new RCharacter();}
+//	public static RInteger na(RInteger v) {return new RInteger();}
+//	public static RNumeric na(RNumeric v) {return new RNumeric();}
+//	public static RFactor na(RFactor v) {return new RFactor();}
+//	public static RLogical na(RLogical v) {return new RLogical();}
+//	public static RDate na(RDate v) {return new RDate();}
 	
 	public default String asCsv() {
 		return rCode();

@@ -70,9 +70,12 @@ public class RCharacterVector extends RVector<RCharacter> implements JNIPrimitiv
 		this.addAll(Arrays.asList(o));
 		return this;
 	}
+	
 	public static RCharacterVector empty() {
 		return new RCharacterVector();
 	}
+	
+	
 	
 	public void fillNA(int length) {this.fill(RCharacter.NA, length);}
 	

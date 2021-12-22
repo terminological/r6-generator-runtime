@@ -2,6 +2,7 @@ package uk.co.terminological.rjava.types;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
 import uk.co.terminological.rjava.RDataType;
@@ -20,9 +21,8 @@ import uk.co.terminological.rjava.RObjectVisitor;
 				"function(rObj) {", 
 				"	if (is.na(rObj)) return(rJava::.jnew('~RDATE~'))",
 				"	if (length(rObj) > 1) stop('input too long')",
-				"   if (rObj<'0001-01-01') message('negative dates will be converted to NA')",
-				//"	if (!is.numeric(rObj)) stop('expected a numeric')",
-				"	tmp = as.character(rObj,format='%Y-%m-%d')[[1]]",
+				"   if (rObj<'0001-01-01') message('dates smaller than 0001-01-01 will be converted to NA')",
+				"	tmp = as.character(rObj,format='%C%y-%m-%d')[[1]]",
 				"	return(rJava::.jnew('~RDATE~',tmp))", 
 				"}"
 		}
@@ -51,7 +51,11 @@ public class RDate implements RPrimitive, JNIPrimitive  {
 			if (value.startsWith("-")) {
 				self = null;
 			} else {
-				self = LocalDate.parse(value,rformatter);
+				try {
+					self = LocalDate.parse(value,rformatter);
+				} catch (DateTimeParseException e) {
+					self = null;
+				}
 			}
 		}
 	}

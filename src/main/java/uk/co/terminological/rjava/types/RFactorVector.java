@@ -1,6 +1,5 @@
 package uk.co.terminological.rjava.types;
 
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Optional;
@@ -43,12 +42,13 @@ public class RFactorVector extends RVector<RFactor> {
 	private String[] levels;
 	public RFactorVector(int[] values, String[] levels) {
 		super(values.length);
+		this.levels = levels;
 		for (int i=0; i<values.length; i++) {
 			this.add(new RFactor(values[i], levels[values[i]-1]));
 //			if(!index.containsKey(values[i])) index.put(values[i], new ArrayList<>());
 //			index.get(values[i]).add(i);
 		}
-		this.levels = levels;
+		
 		//factors are 1 indexed - java arrays zero indexed
 	}
 	public RFactorVector() {super();}
@@ -64,7 +64,7 @@ public class RFactorVector extends RVector<RFactor> {
 		if (levels != null) return levels;
 		LinkedHashMap<Integer,String> tmp = new LinkedHashMap<>();
 		this.stream().forEach(f -> tmp.put(f.rValue(), f.rLabel()));
-		String[] obs = IntStream.range(0, tmp.size()).mapToObj(i -> tmp.getOrDefault(i, "unknown_"+i)).collect(Collectors.toList()).toArray(new String[] {});
+		String[] obs = IntStream.range(0, tmp.size()).mapToObj(i -> tmp.getOrDefault(i+1, "unknown_"+i)).collect(Collectors.toList()).toArray(new String[] {});
 		return obs;
 	}
 	

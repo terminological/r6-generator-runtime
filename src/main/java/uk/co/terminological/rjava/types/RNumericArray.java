@@ -150,7 +150,7 @@ public class RNumericArray extends RArray<RNumeric> implements JNIPrimitive {
 	}
 	
 	public Stream<RNumericArray> get() throws ZeroDimensionalArrayException  {
-		return IntStream.range(0, majorDimension()-1).boxed().map(i -> this.getUnsafe(i));
+		return IntStream.range(0, majorDimension()).boxed().map(i -> this.getUnsafe(i));
 	}
 	
 	public Stream<RNumericArray> getUnsafe() {
