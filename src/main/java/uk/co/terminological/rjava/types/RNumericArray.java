@@ -133,7 +133,7 @@ public class RNumericArray extends RArray<RNumeric> implements JNIPrimitive {
 			newDims[i] = this.dimensions[i];
 			multiplier *= this.dimensions[i];
 		}
-		RNumericVector sublist = new RNumericVector(this.vector.subList(majorZeroBasedIndex*multiplier, (majorZeroBasedIndex+1)*multiplier-1));
+		RNumericVector sublist = new RNumericVector(this.vector.subList(majorZeroBasedIndex*multiplier, (majorZeroBasedIndex+1)*multiplier));
 		return new RNumericArray(sublist, newDims);
 	}
 	

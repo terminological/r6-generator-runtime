@@ -15,6 +15,7 @@ import uk.co.terminological.rjava.RFunctions;
 import uk.co.terminological.rjava.RName;
 // CE01
 import uk.co.terminological.rjava.UnconvertableTypeException;
+import uk.co.terminological.rjava.ZeroDimensionalArrayException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 
+@SuppressWarnings("unused")
 class TestDatatypes {
 
 	@BeforeEach
@@ -271,7 +273,12 @@ class TestDatatypes {
 		dia.attach(Diamonds.class).getRow(100).lag().coerce().getCuts().get();
 	}
 	
-	
+	@Test void testNumericArray() throws ZeroDimensionalArrayException {
+		RNumericArray tmp = new RNumericArray(testNumeric(), new int[] {3,5});
+		assertEquals(3, tmp.get(1).dimensions[0]);
+		RNumericArray tmp2 = new RNumericArray(testNumeric(), new int[] {5,3});
+		assertEquals(5, tmp2.get(1).getVector().size());
+	}
 	
 	static RNumericVector testNumeric() {
 		return RVector.with(0.1,0.2,0.3,0.4,0.5,1.1,1.2,1.3,1.4,1.5);
