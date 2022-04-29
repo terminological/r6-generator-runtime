@@ -21,15 +21,22 @@ public class RBoundDataframe<X> extends RDataframe {
 
 	private Class<X> type;
 	private transient Map<Method,Function<RDataframeRow,RPrimitive>> methodMap;
+	private boolean strict;
 
 	public RBoundDataframe(Class<X> interfaceType, RDataframe dataframe) throws UnconvertableTypeException {
+		this(interfaceType,dataframe,true);
+	}
+	
+	public RBoundDataframe(Class<X> interfaceType, RDataframe dataframe, boolean strict) throws UnconvertableTypeException {
 		super(dataframe);
 		this.type = interfaceType;
 		this.methodMap = this.createMap();
+		this.strict = strict;
 	};
 	
 	
 	
+	@SuppressWarnings("unchecked")
 	private Map<Method,Function<RDataframeRow,RPrimitive>> createMap() throws UnconvertableTypeException {
 		if(!type.isInterface()) throw new UnsupportedOperationException("type must be an interface: "+type.getCanonicalName());
 		Map<Method,Function<RDataframeRow,RPrimitive>> methodMap = new HashMap<>();
@@ -47,20 +54,29 @@ public class RBoundDataframe<X> extends RDataframe {
 				}
 				
 				// Check the column exists
-				if (!this.containsKey(colName)) throw new UnconvertableTypeException(
-						"Expected column '"+colName+"' but it was missing from this dataframe."
-				);
+				if (!this.containsKey(colName)) {
+					if (strict) {
+						throw new UnconvertableTypeException("Expected column '"+colName+"' but it was missing from this dataframe.");
+					} else {
+						if (!RPrimitive.class.isAssignableFrom(m.getReturnType())) throw new UnconvertableTypeException("Interface methods must extend from primitive R types");
+						methodMap.put(m, 
+							o -> RPrimitive.na((Class<? extends RPrimitive>) m.getReturnType())
+						);
+					}
 				
-				// Check its of the right type
-				if (!m.getReturnType().isAssignableFrom(this.getTypeOfColumn(colName))) throw new UnconvertableTypeException(
-						"The type of column: "+colName+" is not compatible. It is a "+
-								this.getTypeOfColumn(colName).getSimpleName()+" and we wanted a "+
-								m.getReturnType().getSimpleName()
-				);
-				
-				methodMap.put(m, 
-					o -> (RPrimitive) m.getReturnType().cast(o.get(colName))
-				);
+				} else {
+					
+					// Check its of the right type
+					if (!m.getReturnType().isAssignableFrom(this.getTypeOfColumn(colName))) throw new UnconvertableTypeException(
+							"The type of column: "+colName+" is not compatible. It is a "+
+									this.getTypeOfColumn(colName).getSimpleName()+" and we wanted a "+
+									m.getReturnType().getSimpleName()
+					);
+					
+					methodMap.put(m, 
+						o -> (RPrimitive) m.getReturnType().cast(o.get(colName))
+					);
+				}
 			}
 		}
 		return methodMap;

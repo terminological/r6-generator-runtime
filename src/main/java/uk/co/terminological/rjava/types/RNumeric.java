@@ -1,6 +1,7 @@
 package uk.co.terminological.rjava.types;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
@@ -153,6 +154,11 @@ public class RNumeric implements RPrimitive, JNIPrimitive  {
 		if (this.self == null) throw new UnexpectedNaValueException();
 		return this.self.doubleValue();
 	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public Optional<Double> opt() {return opt(Double.class);}
+	
 	
 	
 }

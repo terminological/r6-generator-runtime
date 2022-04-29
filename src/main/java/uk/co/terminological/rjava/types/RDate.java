@@ -130,4 +130,9 @@ public class RDate implements RPrimitive, JNIPrimitive  {
 	public String asCsv() {
 		return toString();
 	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public Optional<LocalDate> opt() {return opt(LocalDate.class);}
+	
 }

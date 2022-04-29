@@ -106,6 +106,10 @@ public class RCharacter implements RPrimitive, CharSequence, JNIPrimitive {
 	
 	@SuppressWarnings("unchecked")
 	@Override
+	public Optional<String> opt() {return opt(String.class);}
+	
+	@SuppressWarnings("unchecked")
+	@Override
 	public <X> X get(Class<X> type) throws ClassCastException {
 		if (type.isInstance(this)) return (X) this;
 		if (type.isInstance(self)) return (X) self;

@@ -308,6 +308,10 @@ public class RDataframe extends LinkedHashMap<String, RVector<? extends RPrimiti
 		return new RBoundDataframe<X>(type,this);
 	}
 	
+	public <X> RBoundDataframe<X> attachPermissive(Class<X> type) throws UnconvertableTypeException {
+		return new RBoundDataframe<X>(type,this,false);
+	}
+	
 	/**
 	 * @param type an interface definition with getter methods that specify the correct RPrimitive datatype of the each named column.
 	 * @return a stream of the interface type

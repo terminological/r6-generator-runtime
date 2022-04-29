@@ -1,5 +1,7 @@
 package uk.co.terminological.rjava.types;
 
+import java.util.Optional;
+
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
 import uk.co.terminological.rjava.UnexpectedNaValueException;
@@ -114,4 +116,9 @@ public class RInteger implements RPrimitive, JNIPrimitive {
 		if (this.self == null) throw new UnexpectedNaValueException();
 		return this.self.intValue();
 	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public Optional<Integer> opt() {return opt(Integer.class);}
+	
 }

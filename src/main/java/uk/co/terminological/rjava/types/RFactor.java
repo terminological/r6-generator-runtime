@@ -1,5 +1,7 @@
 package uk.co.terminological.rjava.types;
 
+import java.util.Optional;
+
 import uk.co.terminological.rjava.RConverter;
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
@@ -125,5 +127,9 @@ public class RFactor implements RPrimitive {
 	public static RFactor from(Enum<?> e) {
 		return new RFactor(e);
 	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public Optional<String> opt() {return Optional.of(label);}
 	
 }

@@ -1,5 +1,7 @@
 package uk.co.terminological.rjava.types;
 
+import java.util.Optional;
+
 import uk.co.terminological.rjava.RDataType;
 import uk.co.terminological.rjava.RObjectVisitor;
 
@@ -105,4 +107,9 @@ public class RLogical implements RPrimitive, JNIPrimitive {
 	public static RLogical from(int value) {
 		return new RLogical(value);
 	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public Optional<Boolean> opt() {return opt(Boolean.class);}
+	
 }
