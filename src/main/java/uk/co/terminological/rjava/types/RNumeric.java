@@ -121,10 +121,10 @@ public class RNumeric implements RPrimitive, JNIPrimitive  {
 	public <X> X get(Class<X> type) throws ClassCastException {
 		if (type.isInstance(this)) return (X) this;
 		if (type.isInstance(self)) return (X) self;
-		if (type.equals(Long.class)) return (X) (Long) self.longValue();
-		if (type.equals(Double.class)) return (X) (Double) self.doubleValue();
-		if (type.equals(Float.class)) return (X) (Float) self.floatValue();
-		if (type.equals(BigDecimal.class)) return (X) BigDecimal.valueOf(self.doubleValue());
+		if (type.equals(Long.class)) return (X) (Long) (self == null ? null : self.longValue());
+		if (type.equals(Double.class)) return (X) (Double) (self == null ? null : self.doubleValue());
+		if (type.equals(Float.class)) return (X) (Float) (self == null ? null : self.floatValue());
+		if (type.equals(BigDecimal.class)) return (X) (self == null ? null : BigDecimal.valueOf(self.doubleValue()));
 		throw new ClassCastException("Can't convert to a "+type.getCanonicalName());
 	}
 	

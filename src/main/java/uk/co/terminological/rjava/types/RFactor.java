@@ -58,7 +58,7 @@ public class RFactor implements RPrimitive {
 	}
 	
 	public RFactor() {
-		this(NA_VALUE, "NA");
+		this(NA_VALUE, NA_LABEL);
 	}
 
 	
