@@ -1,5 +1,7 @@
 # r6-generator-runtime
 
+[![DOI](https://zenodo.org/badge/304669409.svg)](https://zenodo.org/badge/latestdoi/304669409)
+
 Runtime maven dependency for annotation processor and java utilities for mapping to and from R supported data structures
 
 This package contains necessary annotations and data structures that are required for the Java developer who is trying to create an R library using the r6-generator-maven-plugin, and is a required dependency of such a project. 
